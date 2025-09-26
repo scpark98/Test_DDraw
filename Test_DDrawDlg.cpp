@@ -1,5 +1,4 @@
-﻿
-// Test_DDrawDlg.cpp: 구현 파일
+﻿// Test_DDrawDlg.cpp: 구현 파일
 //
 
 #include "pch.h"
@@ -13,8 +12,14 @@
 #include <dwrite.h>
 #include <wincodec.h>
 
+#include <d2d1_1.h>
+
 #pragma comment(lib, "Windowscodecs.lib")
 #pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "d3d11.lib")
+
+#include "Common/Functions.h"
+#include "Common/MemoryDC.h"
 
 #define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p)=NULL; } }
 
@@ -69,6 +74,8 @@ CTestDDrawDlg::CTestDDrawDlg(CWnd* pParent /*=nullptr*/)
 void CTestDDrawDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_STATIC_IMG, m_static_img);
+	DDX_Control(pDX, IDC_STATIC_IMG2, m_static_img2);
 }
 
 BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
@@ -77,6 +84,9 @@ BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_ERASEBKGND()
 	ON_WM_SIZE()
+	ON_WM_DESTROY()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
 
 
@@ -112,10 +122,19 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	m_filename = _T("D:\\Prism_3840x2160.png");
+	m_img.load(m_filename);
+
 	CoInitialize(NULL);
 
 	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_pWICFactory));
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+
+	m_resize.Create(this);
+	m_resize.Add(IDC_STATIC_IMG, 0, 0, 50, 100);
+	m_resize.Add(IDC_STATIC_IMG2, 50, 0, 50, 100);
+
+	RestoreWindowPosition(&theApp, this);
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -158,13 +177,16 @@ void CTestDDrawDlg::OnPaint()
 	}
 	else
 	{
+		//이 문장을 주석처리하면 render가 안됨.
 		CDialogEx::OnPaint();
 
-		if (m_pD2DFactory != NULL)
-		{
-			OnRender();
-		}
+		//여기서 dlg의 배경을 그리려했으나 위의 CDialogEx::OnPaint(); 때문인지 배경 적용 안됨.
+		//OnEraseBkgnd();에서 배경 처리함.
+		//CPaintDC dc(this);
+		//dc.FillSolidRect(CRect(100, 0, 1000, 1000), red);
 
+		if (m_pD2DFactory != NULL)
+			OnRender();
 	}
 }
 
@@ -185,8 +207,9 @@ HRESULT CTestDDrawDlg::OnRender()
 		D2D1_SIZE_F renderTargetSize = m_pRenderTarget->GetSize();
 
 		m_pRenderTarget->BeginDraw();
-		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+		//m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+		//m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+		//m_pRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
 		// 격자 패턴으로 배경을 칠함.
 		//m_pRenderTarget->FillRectangle(D2D1::RectF(0.0f, 0.0f, renderTargetSize.width, renderTargetSize.height), m_pGridPatternBitmapBrush);
@@ -196,7 +219,8 @@ HRESULT CTestDDrawDlg::OnRender()
 
 		// 첫 번째로 비트맵 m_pBitmap을 그리기.
 
-		m_pRenderTarget->DrawBitmap(m_pAnotherBitmap, D2D1::RectF(renderTargetSize.width - size.width, renderTargetSize.height - size.height, renderTargetSize.width, renderTargetSize.height));
+		//m_pRenderTarget->DrawBitmap(m_pAnotherBitmap, D2D1::RectF(renderTargetSize.width - size.width, renderTargetSize.height - size.height, renderTargetSize.width, renderTargetSize.height));
+		m_pRenderTarget->DrawBitmap(m_pAnotherBitmap, D2D1::RectF(0, 0, renderTargetSize.width, renderTargetSize.height));// , 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 
 		hr = m_pRenderTarget->EndDraw();
 
@@ -217,20 +241,21 @@ HRESULT CTestDDrawDlg::CreateDeviceResources()
 	if (!m_pRenderTarget)
 	{
 		RECT rc;
-		::GetClientRect(m_hWnd, &rc);
+		::GetClientRect(m_static_img.m_hWnd, &rc);
 
-		D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
+		D2D1_SIZE_U size = D2D1::SizeU(1, 1);// rc.right - rc.left, rc.bottom - rc.top);
 
 		// D2D 렌더타겟을 생성함.
 		hr = m_pD2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),
-			D2D1::HwndRenderTargetProperties(m_hWnd, size),
+			D2D1::HwndRenderTargetProperties(m_static_img.m_hWnd, size),
 			&m_pRenderTarget);
 
 
 		// 외부 파일로부터 비트맵 객체 m_pAnotherBitmap를 생성함.
 		if (SUCCEEDED(hr))
 		{
-			hr = LoadBitmapFromFile(m_pRenderTarget, m_pWICFactory, L"d:\\mountain.jpg", 3840, 2160, &m_pAnotherBitmap);
+			hr = LoadBitmapFromFile(m_pRenderTarget, m_pWICFactory, m_filename, 0, 0, &m_pAnotherBitmap);
+			//m_pRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 		}
 	}
 	return hr;
@@ -269,11 +294,19 @@ HRESULT CTestDDrawDlg::LoadBitmapFromFile(ID2D1RenderTarget* pRenderTarget, IWIC
 
 	if (SUCCEEDED(hr))
 	{
+		UINT originalWidth, originalHeight;
+		hr = pSource->GetSize(&originalWidth, &originalHeight);
+
+		if (destinationWidth <= 0)
+			destinationWidth = originalWidth;
+		if (destinationHeight <= 0)
+			destinationHeight = originalHeight;
+
+		((ID2D1HwndRenderTarget*)pRenderTarget)->Resize(D2D1::SizeU(destinationWidth, destinationHeight));
+
 		// If a new width or height was specified, create an IWICBitmapScaler and use it to resize the image.
 		if (destinationWidth != 0 || destinationHeight != 0)
 		{
-			UINT originalWidth, originalHeight;
-			hr = pSource->GetSize(&originalWidth, &originalHeight);
 			if (SUCCEEDED(hr))
 			{
 				if (destinationWidth == 0)
@@ -290,7 +323,7 @@ HRESULT CTestDDrawDlg::LoadBitmapFromFile(ID2D1RenderTarget* pRenderTarget, IWIC
 				hr = pIWICFactory->CreateBitmapScaler(&pScaler);
 				if (SUCCEEDED(hr))
 				{
-					hr = pScaler->Initialize(pSource, destinationWidth, destinationHeight, WICBitmapInterpolationModeCubic);
+					hr = pScaler->Initialize(pSource, destinationWidth, destinationHeight, WICBitmapInterpolationModeHighQualityCubic);// WICBitmapInterpolationModeCubic);
 				}
 				if (SUCCEEDED(hr))
 				{
@@ -321,6 +354,16 @@ HRESULT CTestDDrawDlg::LoadBitmapFromFile(ID2D1RenderTarget* pRenderTarget, IWIC
 BOOL CTestDDrawDlg::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	CRect rc;
+	
+	GetClientRect(&rc);
+	pDC->FillSolidRect(rc, RGB(255, 128, 0));
+
+	CRect r;
+	m_static_img2.GetWindowRect(&r);
+	ScreenToClient(&r);
+	m_img.draw(pDC, r, CSCGdiplusBitmap::draw_mode_stretch);
+
 	return FALSE;
 	return CDialogEx::OnEraseBkgnd(pDC);
 }
@@ -331,4 +374,38 @@ void CTestDDrawDlg::OnSize(UINT nType, int cx, int cy)
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	Invalidate();
+	//if (m_pRenderTarget)
+	//{
+	//	// 렌더타겟 크기 변경에 대응하여 리소스를 재생성
+	//	DiscardDeviceResources();
+	//	CreateDeviceResources();
+	//	Invalidate();
+	//}
+}
+
+void CTestDDrawDlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	m_pD2DFactory->Release();
+	m_pWICFactory->Release();
+	DiscardDeviceResources();
+	CoUninitialize();
+
+	SaveWindowPosition(&theApp, this);
+}
+
+void CTestDDrawDlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+void CTestDDrawDlg::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	AfxMessageBox(_T("OnLButtonUp"));
+	CDialogEx::OnLButtonUp(nFlags, point);
 }

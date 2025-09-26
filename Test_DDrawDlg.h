@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "Common/ResizeCtrl.h"
+#include "Common/SCGdiplusBitmap.h"
 
 // CTestDDrawDlg 대화 상자
 class CTestDDrawDlg : public CDialogEx
@@ -11,6 +13,10 @@ class CTestDDrawDlg : public CDialogEx
 // 생성입니다.
 public:
 	CTestDDrawDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+
+	CResizeCtrl			m_resize;
+	CSCGdiplusBitmap	m_img;
+	CString				m_filename;
 
 	HRESULT CreateDeviceIndependentResources();
 	HRESULT CreateDeviceResources();
@@ -53,4 +59,9 @@ protected:
 public:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	CStatic m_static_img;
+	CStatic m_static_img2;
+	afx_msg void OnDestroy();
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 };
