@@ -124,7 +124,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	m_filename = _T("D:\\align.png");
+	m_filename = _T("D:\\홍매화.png");
 	m_img.load(m_filename);
 	m_img.set_alpha(128);
 
@@ -133,7 +133,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	HRESULT hr = CreateDeviceIndependentResources();
 	hr = CreateDeviceResources();
 	//LoadBitmapFromFile(L"D:\\5120.jpg", &myBitmap);
-	LoadBitmapFromFile(L"D:\\다운로드.jfif", &myBitmap);
+	LoadBitmapFromFile(L"D:\\권나라.jpg", &myBitmap);
 	LoadBitmapFromFile2(L"loading.gif", mySequenceBitmap.get());
 	LoadBitmapFromFile2(L"snail_small.png", myCharacterBitmap.get());
 
@@ -751,7 +751,6 @@ void CTestDDrawDlg::OnLButtonDown(UINT nFlags, CPoint point)
 void CTestDDrawDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	AfxMessageBox(_T("OnLButtonUp"));
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
