@@ -51,6 +51,9 @@
     <ClInclude Include="..\..\Common\MemoryDC.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="MyBitmap.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Test_DDraw.cpp">
@@ -73,6 +76,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\Functions.cpp">
       <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="MyBitmap.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

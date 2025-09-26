@@ -7,15 +7,9 @@
 #include "Test_DDrawDlg.h"
 #include "afxdialogex.h"
 
-#include <d2d1.h>
-#include <d2d1helper.h>
-#include <dwrite.h>
-#include <wincodec.h>
-
-#include <d2d1_1.h>
-
-#pragma comment(lib, "Windowscodecs.lib")
 #pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "Windowscodecs.lib")
 #pragma comment(lib, "d3d11.lib")
 
 #include "Common/Functions.h"
@@ -69,6 +63,14 @@ CTestDDrawDlg::CTestDDrawDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_TEST_DDRAW_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_Direct2dFactory = (nullptr);
+	myLightSlateGrayBrush = (nullptr);
+	myCornflowerBlueBrush = (nullptr);
+	m_WICFactory = (nullptr);
+	myBitmap = (nullptr);
+	m_Direct2dDevice = (nullptr);
+	m_Direct2dContext = (nullptr);
+	m_SwapChain = (nullptr);
 }
 
 void CTestDDrawDlg::DoDataExchange(CDataExchange* pDX)
@@ -125,10 +127,14 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	m_filename = _T("D:\\Prism_3840x2160.png");
 	m_img.load(m_filename);
 
-	CoInitialize(NULL);
+	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_pWICFactory));
-	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+	HRESULT hr = CreateDeviceIndependentResources();
+	hr = CreateDeviceResources();
+	LoadBitmapFromFile(L"D:\\Prism_3840x2160.png", &myBitmap);
+	LoadBitmapFromFile2(L"loading.gif", mySequenceBitmap.get());
+	LoadBitmapFromFile2(L"snail_small.png", myCharacterBitmap.get());
+
 
 	m_resize.Create(this);
 	m_resize.Add(IDC_STATIC_IMG, 0, 0, 50, 100);
@@ -178,15 +184,19 @@ void CTestDDrawDlg::OnPaint()
 	else
 	{
 		//이 문장을 주석처리하면 render가 안됨.
-		CDialogEx::OnPaint();
+		//ID2D1DeviceContext 방식으로 변경 후 주석처리해도 정상동작함.
+		//CDialogEx::OnPaint();
 
 		//여기서 dlg의 배경을 그리려했으나 위의 CDialogEx::OnPaint(); 때문인지 배경 적용 안됨.
 		//OnEraseBkgnd();에서 배경 처리함.
-		//CPaintDC dc(this);
-		//dc.FillSolidRect(CRect(100, 0, 1000, 1000), red);
+		//ID2D1DeviceContext 방식으로 변경 후 dc에도 잘 그려짐
+		CPaintDC dc(this);
+		CRect rc;
 
-		if (m_pD2DFactory != NULL)
-			OnRender();
+		GetClientRect(rc);
+		dc.FillSolidRect(rc, red);
+
+		OnRender();
 	}
 }
 
@@ -197,6 +207,332 @@ HCURSOR CTestDDrawDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+D2D1_SIZE_U CTestDDrawDlg::CalculateD2DWindowSize()
+{
+	RECT rc;
+	::GetClientRect(m_static_img.m_hWnd, &rc);
+
+	D2D1_SIZE_U d2dWindowSize = { 0 };
+	d2dWindowSize.width = rc.right;
+	d2dWindowSize.height = rc.bottom;
+
+	return d2dWindowSize;
+}
+
+HRESULT CTestDDrawDlg::CreateDeviceContext() {
+	HRESULT hr = S_OK;
+
+	D2D1_SIZE_U size = CalculateD2DWindowSize();
+
+	UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+	D3D_DRIVER_TYPE driverTypes[] =
+	{
+		D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE_WARP,
+	};
+	UINT countOfDriverTypes = ARRAYSIZE(driverTypes);
+
+	DXGI_SWAP_CHAIN_DESC swapDescription;
+	ZeroMemory(&swapDescription, sizeof(swapDescription));
+	swapDescription.BufferDesc.Width = size.width;
+	swapDescription.BufferDesc.Height = size.height;
+	swapDescription.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	swapDescription.BufferDesc.RefreshRate.Numerator = 60;
+	swapDescription.BufferDesc.RefreshRate.Denominator = 1;
+	swapDescription.SampleDesc.Count = 1;
+	swapDescription.SampleDesc.Quality = 0;
+	swapDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapDescription.BufferCount = 1;
+	swapDescription.OutputWindow = m_static_img.m_hWnd;
+	swapDescription.Windowed = TRUE;
+
+	ComPtr<ID3D11Device> d3dDevice;
+	for (UINT driverTypeIndex = 0; driverTypeIndex < countOfDriverTypes; driverTypeIndex++) {
+		hr = D3D11CreateDeviceAndSwapChain(
+			nullptr,
+			driverTypes[driverTypeIndex],
+			nullptr,
+			createDeviceFlags,
+			nullptr,
+			0,
+			D3D11_SDK_VERSION,
+			&swapDescription,
+			&m_SwapChain,
+			&d3dDevice,
+			nullptr,
+			nullptr
+		);
+
+		if (SUCCEEDED(hr)) {
+			break;
+		}
+	}
+
+	ComPtr<IDXGIDevice> dxgiDevice;
+	if (SUCCEEDED(hr)) {
+		hr = d3dDevice->QueryInterface(IID_PPV_ARGS(&dxgiDevice));
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = m_Direct2dFactory->CreateDevice(
+			dxgiDevice.Get(),
+			&m_Direct2dDevice
+		);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = m_Direct2dDevice->CreateDeviceContext(
+			D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
+			&m_Direct2dContext
+		);
+	}
+
+	return hr;
+}
+
+HRESULT CTestDDrawDlg::CreateDeviceIndependentResources() {
+	HRESULT hr = S_OK;
+	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&m_Direct2dFactory));
+	if (SUCCEEDED(hr)) {
+		hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER,
+			IID_PPV_ARGS(&m_WICFactory));
+	}
+	mySequenceBitmap = std::make_shared<MyBitmap>();
+	myCharacterBitmap = std::make_shared<MyBitmap>();
+
+	return hr;
+}
+
+HRESULT CTestDDrawDlg::CreateDeviceResources() {
+	HRESULT hr = S_OK;
+
+	if (!m_Direct2dContext) {
+		hr = CreateDeviceContext();
+
+		ComPtr<IDXGISurface> surface = nullptr;
+		if (SUCCEEDED(hr)) {
+			hr = m_SwapChain->GetBuffer(
+				0,
+				IID_PPV_ARGS(&surface)
+			);
+		}
+		ComPtr<ID2D1Bitmap1> bitmap = nullptr;
+		if (SUCCEEDED(hr)) {
+			FLOAT dpiX, dpiY;
+			dpiX = (FLOAT)GetDpiForWindow(::GetDesktopWindow());
+			dpiY = dpiX;
+
+			D2D1_BITMAP_PROPERTIES1 properties = D2D1::BitmapProperties1(
+				D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+				D2D1::PixelFormat(
+					DXGI_FORMAT_B8G8R8A8_UNORM,
+					D2D1_ALPHA_MODE_IGNORE
+				),
+				dpiX,
+				dpiY
+			);
+
+			hr = m_Direct2dContext->CreateBitmapFromDxgiSurface(
+				surface.Get(),
+				&properties,
+				&bitmap
+			);
+		}
+		if (SUCCEEDED(hr)) {
+			m_Direct2dContext->SetTarget(bitmap.Get());
+		}
+
+		if (SUCCEEDED(hr)) {
+			hr = m_Direct2dContext->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF::LightSlateGray),
+				&myLightSlateGrayBrush
+			);
+		}
+		if (SUCCEEDED(hr)) {
+			hr = m_Direct2dContext->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF::CornflowerBlue),
+				&myCornflowerBlueBrush
+			);
+		}
+	}
+
+	return hr;
+}
+
+HRESULT CTestDDrawDlg::LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap** ppBitmap) {
+	ComPtr<IWICBitmapDecoder> pDecoder;
+	ComPtr<IWICBitmapFrameDecode> pSource;
+	ComPtr<IWICStream> pStream;
+	ComPtr<IWICFormatConverter> pConverter;
+	ComPtr<IWICBitmapScaler> pScaler;
+
+	if (!m_WICFactory) CreateDeviceIndependentResources();
+	if (!m_Direct2dContext) CreateDeviceContext();
+
+	HRESULT hr = m_WICFactory->CreateDecoderFromFilename(
+		uri,
+		NULL,
+		GENERIC_READ,
+		WICDecodeMetadataCacheOnLoad,
+		&pDecoder
+	);
+
+	if (SUCCEEDED(hr)) {
+		hr = pDecoder->GetFrame(0, &pSource);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = m_WICFactory->CreateFormatConverter(&pConverter);
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = pConverter->Initialize(
+			pSource.Get(),
+			GUID_WICPixelFormat32bppPBGRA,
+			WICBitmapDitherTypeNone,
+			NULL,
+			0.f,
+			WICBitmapPaletteTypeMedianCut
+		);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = m_Direct2dContext->CreateBitmapFromWicBitmap(
+			pConverter.Get(),
+			NULL,
+			ppBitmap
+		);
+	}
+
+	return hr;
+}
+
+HRESULT CTestDDrawDlg::LoadBitmapFromFile2(PCWSTR uri, MyBitmap* myBitmap) {
+	ComPtr<IWICBitmapDecoder> pDecoder;
+	std::vector<ComPtr<ID2D1Bitmap>> bitmapArr;
+
+	if (!m_WICFactory) CreateDeviceIndependentResources();
+	if (!m_Direct2dContext) CreateDeviceContext();
+
+	HRESULT hr = m_WICFactory->CreateDecoderFromFilename(
+		uri,
+		NULL,
+		GENERIC_READ,
+		WICDecodeMetadataCacheOnLoad,
+		&pDecoder
+	);
+
+	UINT frameCount = -1;
+	if (SUCCEEDED(hr))
+	{
+		hr = pDecoder->GetFrameCount(&frameCount);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		for (int i = 0; i < frameCount; i++)
+		{
+			ComPtr<IWICFormatConverter> pConverter;
+			ComPtr<IWICBitmapFrameDecode> tmpSource;
+			ComPtr<ID2D1Bitmap> tmpBitmap;
+			if (SUCCEEDED(hr))
+			{
+				hr = m_WICFactory->CreateFormatConverter(&pConverter);
+			}
+
+			if (SUCCEEDED(hr))
+			{
+				hr = pDecoder->GetFrame(i, &tmpSource);
+			}
+
+			if (SUCCEEDED(hr))
+			{
+				hr = pConverter->Initialize(
+					tmpSource.Get(),
+					GUID_WICPixelFormat32bppPBGRA,
+					WICBitmapDitherTypeNone,
+					NULL,
+					0.f,
+					WICBitmapPaletteTypeMedianCut
+				);
+			}
+			if (SUCCEEDED(hr)) {
+				hr = m_Direct2dContext->CreateBitmapFromWicBitmap(
+					pConverter.Get(),
+					NULL,
+					&tmpBitmap
+				);
+			}
+			if (SUCCEEDED(hr)) {
+				bitmapArr.push_back(std::move(tmpBitmap));
+			}
+		}
+	}
+	if (myBitmap) {
+		myBitmap->Initialize(frameCount, bitmapArr);
+	}
+
+
+	return hr;
+}
+
+void CTestDDrawDlg::DiscardDeviceResources()
+{
+}
+
+void CTestDDrawDlg::OnResize(UINT width, UINT height)
+{
+	if (m_Direct2dContext) {
+		HRESULT hr = S_OK;
+
+		m_Direct2dContext->SetTarget(nullptr);
+
+		if (SUCCEEDED(hr)) {
+			hr = m_SwapChain->ResizeBuffers(
+				0,
+				width,
+				height,
+				DXGI_FORMAT_B8G8R8A8_UNORM,
+				0
+			);
+		}
+
+		ComPtr<IDXGISurface> surface = nullptr;
+		if (SUCCEEDED(hr)) {
+			hr = m_SwapChain->GetBuffer(
+				0,
+				IID_PPV_ARGS(&surface)
+			);
+		}
+
+		ComPtr<ID2D1Bitmap1> bitmap = nullptr;
+		if (SUCCEEDED(hr)) {
+			FLOAT dpiX, dpiY;
+			dpiX = (FLOAT)GetDpiForWindow(::GetDesktopWindow());
+			dpiY = dpiX;
+			D2D1_BITMAP_PROPERTIES1 properties = D2D1::BitmapProperties1(
+				D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+				D2D1::PixelFormat(
+					DXGI_FORMAT_B8G8R8A8_UNORM,
+					D2D1_ALPHA_MODE_IGNORE
+				),
+				dpiX,
+				dpiY
+			);
+			hr = m_Direct2dContext->CreateBitmapFromDxgiSurface(
+				surface.Get(),
+				&properties,
+				&bitmap
+			);
+		}
+
+		if (SUCCEEDED(hr)) {
+			m_Direct2dContext->SetTarget(bitmap.Get());
+		}
+
+		InvalidateRect(FALSE);
+	}
+}
+/*
 HRESULT CTestDDrawDlg::OnRender()
 {
 	HRESULT hr = CreateDeviceResources();
@@ -350,19 +686,19 @@ HRESULT CTestDDrawDlg::LoadBitmapFromFile(ID2D1RenderTarget* pRenderTarget, IWIC
 
 	return hr;
 }
-
+*/
 BOOL CTestDDrawDlg::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	CRect rc;
 	
-	GetClientRect(&rc);
-	pDC->FillSolidRect(rc, RGB(255, 128, 0));
+	//GetClientRect(&rc);
+	//pDC->FillSolidRect(rc, RGB(255, 128, 0));
 
-	CRect r;
-	m_static_img2.GetWindowRect(&r);
-	ScreenToClient(&r);
-	m_img.draw(pDC, r, CSCGdiplusBitmap::draw_mode_stretch);
+	//CRect r;
+	//m_static_img2.GetWindowRect(&r);
+	//ScreenToClient(&r);
+	//m_img.draw(pDC, r, CSCGdiplusBitmap::draw_mode_stretch);
 
 	return FALSE;
 	return CDialogEx::OnEraseBkgnd(pDC);
@@ -372,8 +708,9 @@ void CTestDDrawDlg::OnSize(UINT nType, int cx, int cy)
 {
 	CDialogEx::OnSize(nType, cx, cy);
 
+	OnResize(cx, cy);
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	Invalidate();
+	//Invalidate();
 	//if (m_pRenderTarget)
 	//{
 	//	// 렌더타겟 크기 변경에 대응하여 리소스를 재생성
@@ -388,9 +725,9 @@ void CTestDDrawDlg::OnDestroy()
 	CDialogEx::OnDestroy();
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	m_pD2DFactory->Release();
-	m_pWICFactory->Release();
-	DiscardDeviceResources();
+	//m_pD2DFactory->Release();
+	//m_pWICFactory->Release();
+	//DiscardDeviceResources();
 	CoUninitialize();
 
 	SaveWindowPosition(&theApp, this);
@@ -408,4 +745,213 @@ void CTestDDrawDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	AfxMessageBox(_T("OnLButtonUp"));
 	CDialogEx::OnLButtonUp(nFlags, point);
+}
+
+HRESULT CTestDDrawDlg::OnRender()
+{
+	HRESULT hr = S_OK;
+	hr = CreateDeviceResources();
+	if (SUCCEEDED(hr)) {
+
+		m_Direct2dContext->BeginDraw();
+		m_Direct2dContext->SetTransform(D2D1::Matrix3x2F::Identity());
+		m_Direct2dContext->Clear(D2D1::ColorF(D2D1::ColorF::White));
+
+		D2D1_SIZE_F rtSize = m_Direct2dContext->GetSize();
+
+		int width = static_cast<int>(rtSize.width);
+		int height = static_cast<int>(rtSize.height);
+
+		//for (auto& i : ground) {
+		//	m_Direct2dContext->FillRectangle(&i, myCornflowerBlueBrush.Get());
+		//}
+
+		if (myBitmap) {
+			m_Direct2dContext->DrawBitmap(myBitmap.Get(),
+				D2D1::RectF(
+					0.0f, 0.0f,
+					rtSize.width, rtSize.height
+				));
+		}
+
+		if (mySequenceBitmap) {
+			ComPtr<ID2D1Bitmap> tmp = mySequenceBitmap->GetBitmap();
+			if (tmp) {
+				m_Direct2dContext->DrawImage(tmp.Get(),
+					mySequenceBitmap->GetBitmapPosition());
+			}
+		}
+
+		if (myCharacterBitmap) {
+			ComPtr<ID2D1Bitmap> tmp = myCharacterBitmap->GetBitmap();
+			if (tmp) {
+				// Affine transform init
+				ComPtr<ID2D1Effect> affineTransformEffect;
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D12DAffineTransform,
+					&affineTransformEffect
+				);
+				// Color matrix init
+				ComPtr<ID2D1Effect> colorMatrixEffect;
+				ComPtr<ID2D1Effect> colorMatrixEffect2;
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1ColorMatrix,
+					&colorMatrixEffect
+				);
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1ColorMatrix,
+					&colorMatrixEffect2
+				);
+				// Edge detection init
+				ComPtr<ID2D1Effect> edgeDetectionEffect;
+				ComPtr<ID2D1Effect> edgeDetectionEffect2;
+				ComPtr<ID2D1Effect> edgeDetectionEffect3;
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1EdgeDetection,
+					&edgeDetectionEffect
+				);
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1EdgeDetection,
+					&edgeDetectionEffect2
+				);
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1EdgeDetection,
+					&edgeDetectionEffect3
+				);
+				// Chromakey init
+				ComPtr<ID2D1Effect> chromakeyEffect;
+				ComPtr<ID2D1Effect> chromakeyEffect2;
+				ComPtr<ID2D1Effect> chromakeyEffect3;
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1ChromaKey,
+					&chromakeyEffect
+				);
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1ChromaKey,
+					&chromakeyEffect2
+				);
+				m_Direct2dContext->CreateEffect(
+					CLSID_D2D1ChromaKey,
+					&chromakeyEffect3
+				);
+				// Affine transform input
+				affineTransformEffect->SetInput(0, tmp.Get());
+				// Color matrix input
+				colorMatrixEffect->SetInputEffect(0, affineTransformEffect.Get());
+				colorMatrixEffect2->SetInputEffect(0, colorMatrixEffect.Get());
+				// Edge detection input
+				edgeDetectionEffect->SetInputEffect(0, affineTransformEffect.Get());
+				edgeDetectionEffect2->SetInputEffect(0, colorMatrixEffect.Get());
+				edgeDetectionEffect3->SetInputEffect(0, colorMatrixEffect2.Get());
+				// Chromakey input
+				chromakeyEffect->SetInputEffect(0, edgeDetectionEffect.Get());
+				chromakeyEffect2->SetInputEffect(0, edgeDetectionEffect2.Get());
+				chromakeyEffect3->SetInputEffect(0, edgeDetectionEffect3.Get());
+
+				auto size = tmp->GetPixelSize();
+				D2D1_POINT_2F ps = myCharacterBitmap->GetBitmapDrawOffset();
+				//D2D1_POINT_2F center = D2D1::Point2F(ps.right - ((ps.right - ps.left) / 2), ps.bottom - ((ps.bottom - ps.top) / 2));
+
+				// Affine transform
+				//affineTransformEffect->SetValue(
+				//	D2D1_2DAFFINETRANSFORM_PROP_TRANSFORM_MATRIX,
+				//	D2D1::Matrix3x2F::Scale(D2D1::SizeF((isLeft ? -1 : 1) * 1.f, 1.f), D2D1::Point2F(size.width / 2, size.height / 2))
+				//);
+
+				// Color matrix 1
+				D2D1_MATRIX_5X4_F matrix = D2D1::Matrix5x4F(
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 100,
+					0, 1, 0, 0);
+				colorMatrixEffect->SetValue(
+					D2D1_COLORMATRIX_PROP_COLOR_MATRIX,
+					matrix
+				);
+				colorMatrixEffect->SetValue(
+					D2D1_COLORMATRIX_PROP_CLAMP_OUTPUT,
+					TRUE
+				);
+
+				// Color matrix 2
+				D2D1_MATRIX_5X4_F matrix2 = D2D1::Matrix5x4F(
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 0, 0.5,
+					0, 0, 0, 0);
+				colorMatrixEffect2->SetValue(
+					D2D1_COLORMATRIX_PROP_COLOR_MATRIX,
+					matrix2
+				);
+
+				D2D1_RECT_F rect;
+				UINT rectC;
+				ComPtr<ID2D1Image> tmpImg;
+				affineTransformEffect->QueryInterface(IID_PPV_ARGS(&tmpImg));
+				m_Direct2dContext->GetImageLocalBounds(tmpImg.Get(), &rect);
+				//ComPtr<ID2D1Image> affineImage(ConvertEffectToImage(affineTransformEffect.Get()));
+				//m_Direct2dContext->GetImageLocalBounds(affineImage.Get(), &rect);
+				//std::cout << rect.bottom << " " << rect.left << " " << rect.right << " " << rect.top << " : " << "\n";
+				//m_Direct2dContext->FillRectangle(myCharacterBitmap->GetBitmapRect(), myLightSlateGrayBrush.Get());
+				//m_Direct2dContext->SetTransform(D2D1::Matrix3x2F::Scale((isLeft ? -1 : 1), 1.f, center));
+				/*m_Direct2dContext->DrawBitmap(tmp.Get(),
+					ps
+				);*/
+				// Print image (affine, color matrix)
+				m_Direct2dContext->DrawImage(tmpImg.Get(), D2D1::Point2F(ps.x - 0.f, ps.y - 0.f));
+				//m_Direct2dContext->DrawImage(colorMatrixEffect.Get(), D2D1::Point2F(ps.x - 175.f, ps.y - 70.f));
+				//m_Direct2dContext->DrawImage(colorMatrixEffect2.Get(), D2D1::Point2F(ps.x - 175.f, ps.y + 60.f));
+				//// Print image (edge detection)
+				//m_Direct2dContext->DrawImage(edgeDetectionEffect.Get(), D2D1::Point2F(ps.x - 25.f, ps.y - 200.f));
+				//m_Direct2dContext->DrawImage(edgeDetectionEffect2.Get(), D2D1::Point2F(ps.x - 25.f, ps.y - 70.f));
+				//m_Direct2dContext->DrawImage(edgeDetectionEffect3.Get(), D2D1::Point2F(ps.x - 25.f, ps.y + 60.f));
+				//// Print image (chromakey)
+				//m_Direct2dContext->DrawImage(chromakeyEffect.Get(), D2D1::Point2F(ps.x + 125.f, ps.y - 200.f));
+				//m_Direct2dContext->DrawImage(chromakeyEffect2.Get(), D2D1::Point2F(ps.x + 125.f, ps.y - 70.f));
+				//m_Direct2dContext->DrawImage(chromakeyEffect3.Get(), D2D1::Point2F(ps.x + 125.f, ps.y + 60.f));
+
+
+				//m_Direct2dContext->SetTransform(D2D1::Matrix3x2F::Scale(1.f, 1.f));
+			}
+		}
+
+		/*
+		for (int x = 0; x < width; x += 10) {
+			m_Direct2dContext->DrawLine(D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
+				D2D1::Point2F(static_cast<FLOAT>(x), rtSize.height),
+				myLightSlateGrayBrush.Get(), 0.5f);
+		}
+		for (int y = 0; y < height; y += 10) {
+			m_Direct2dContext->DrawLine(D2D1::Point2F(0.0f, static_cast<FLOAT>(y)),
+				D2D1::Point2F(rtSize.width, static_cast<FLOAT>(y)),
+				myLightSlateGrayBrush.Get(), 0.5f);
+		}
+		*/
+
+		D2D1_RECT_F rectangle1 = D2D1::RectF(
+			rtSize.width / 2 - 50.0f, rtSize.height / 2 - 50.0f,
+			rtSize.width / 2 + 50.0f, rtSize.height / 2 + 50.0f
+		);
+		D2D1_RECT_F rectangle2 = D2D1::RectF(
+			rtSize.width / 2 - 100.0f, rtSize.height / 2 - 100.0f,
+			rtSize.width / 2 + 100.0f, rtSize.height / 2 + 100.0f
+		);
+		//m_Direct2dContext->FillRectangle(&rectangle1, myLightSlateGrayBrush.Get());
+		//m_Direct2dContext->DrawRectangle(&rectangle2, myCornflowerBlueBrush.Get());
+
+		hr = m_Direct2dContext->EndDraw();
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = m_SwapChain->Present(0, 0);
+	}
+
+	if (hr == D2DERR_RECREATE_TARGET) {
+		hr = S_OK;
+		DiscardDeviceResources();
+	}
+
+	return hr;
 }

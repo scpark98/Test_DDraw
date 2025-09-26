@@ -4,6 +4,19 @@
 
 #pragma once
 
+#include <d2d1_1.h>
+#include <d2d1helper.h>
+#include <d2d1effects_2.h>
+
+#include <dwrite.h>
+#include <wincodec.h>
+#include <d3d11.h>
+#include <wrl/client.h>
+
+#include "MyBitmap.h"
+
+//using namespace Microsoft::WRL;
+
 #include "Common/ResizeCtrl.h"
 #include "Common/SCGdiplusBitmap.h"
 
@@ -14,28 +27,35 @@ class CTestDDrawDlg : public CDialogEx
 public:
 	CTestDDrawDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
 
-	CResizeCtrl			m_resize;
-	CSCGdiplusBitmap	m_img;
-	CString				m_filename;
+	CResizeCtrl					m_resize;
+	CSCGdiplusBitmap			m_img;
+	CString						m_filename;
+
+	ComPtr<ID2D1Factory1>        m_Direct2dFactory;
+	ComPtr<IWICImagingFactory2>  m_WICFactory;
+	ComPtr<ID2D1Device>          m_Direct2dDevice;
+	ComPtr<ID2D1DeviceContext>   m_Direct2dContext;
+	ComPtr<IDXGISwapChain>       m_SwapChain;
+
+	ComPtr<ID2D1Bitmap>          myBitmap;
+	std::shared_ptr<MyBitmap>    mySequenceBitmap;
+	std::shared_ptr<MyBitmap>    myCharacterBitmap;
+
+	ComPtr<ID2D1SolidColorBrush> myLightSlateGrayBrush;
+	ComPtr<ID2D1SolidColorBrush> myCornflowerBlueBrush;
+
+
+	HRESULT CreateDeviceContext();
+	D2D1_SIZE_U CalculateD2DWindowSize();
 
 	HRESULT CreateDeviceIndependentResources();
 	HRESULT CreateDeviceResources();
+	HRESULT LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap** ppBitmap);
+	HRESULT LoadBitmapFromFile2(PCWSTR uri, MyBitmap* myBitmap);
 	void DiscardDeviceResources();
+	void Update();
 	HRESULT OnRender();
 	void OnResize(UINT width, UINT height);
-	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-	HRESULT CreateGridPatternBrush(ID2D1RenderTarget* pRenderTarget, __deref_out ID2D1BitmapBrush** ppBitmapBrush);
-
-	HRESULT LoadBitmapFromResource(ID2D1RenderTarget* pRenderTarget, IWICImagingFactory* pIWICFactory, PCWSTR resourceName, PCWSTR resourceType, UINT destinationWidth, UINT destinationHeight, __deref_out ID2D1Bitmap** ppBitmap);
-	HRESULT LoadBitmapFromFile(ID2D1RenderTarget* pRenderTarget, IWICImagingFactory* pIWICFactory, PCWSTR uri, UINT destinationWidth, UINT destinationHeight, __deref_out ID2D1Bitmap** ppBitmap);
-
-	ID2D1Factory* m_pD2DFactory;
-	IWICImagingFactory* m_pWICFactory;
-	ID2D1HwndRenderTarget* m_pRenderTarget;
-	ID2D1BitmapBrush* m_pGridPatternBitmapBrush;
-	ID2D1Bitmap* m_pBitmap;
-	ID2D1Bitmap* m_pAnotherBitmap;
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
