@@ -124,21 +124,23 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	m_filename = _T("D:\\Prism_3840x2160.png");
+	m_filename = _T("D:\\align.png");
 	m_img.load(m_filename);
+	m_img.set_alpha(128);
 
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
 	HRESULT hr = CreateDeviceIndependentResources();
 	hr = CreateDeviceResources();
-	LoadBitmapFromFile(L"D:\\Prism_3840x2160.png", &myBitmap);
+	//LoadBitmapFromFile(L"D:\\5120.jpg", &myBitmap);
+	LoadBitmapFromFile(L"D:\\다운로드.jfif", &myBitmap);
 	LoadBitmapFromFile2(L"loading.gif", mySequenceBitmap.get());
 	LoadBitmapFromFile2(L"snail_small.png", myCharacterBitmap.get());
 
 
 	m_resize.Create(this);
-	m_resize.Add(IDC_STATIC_IMG, 0, 0, 50, 100);
-	m_resize.Add(IDC_STATIC_IMG2, 50, 0, 50, 100);
+	m_resize.Add(IDC_STATIC_IMG, 0, 0, 100, 100);
+	//m_resize.Add(IDC_STATIC_IMG2, 50, 0, 50, 100);
 
 	RestoreWindowPosition(&theApp, this);
 
@@ -190,13 +192,19 @@ void CTestDDrawDlg::OnPaint()
 		//여기서 dlg의 배경을 그리려했으나 위의 CDialogEx::OnPaint(); 때문인지 배경 적용 안됨.
 		//OnEraseBkgnd();에서 배경 처리함.
 		//ID2D1DeviceContext 방식으로 변경 후 dc에도 잘 그려짐
+		OnRender();
+
 		CPaintDC dc(this);
 		CRect rc;
 
 		GetClientRect(rc);
-		dc.FillSolidRect(rc, red);
+		//CMemoryDC dc(&dc1, &rc);
 
-		OnRender();
+		CRect r(50, 50, 250, 250);
+		dc.FillSolidRect(r, red);
+
+		Gdiplus::Graphics g(dc.m_hDC);
+		m_img.draw(&dc, 300, 300);
 	}
 }
 
