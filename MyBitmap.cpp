@@ -13,7 +13,11 @@ ComPtr<ID2D1Bitmap> MyBitmap::GetBitmap() {
 	}
 }
 
-void MyBitmap::Initialize(UINT frameCount, std::vector<ComPtr<ID2D1Bitmap>> bitmapArr) {
+void MyBitmap::Initialize(UINT frameCount, std::vector<ComPtr<ID2D1Bitmap>> bitmapArr)
+{
+	if (frameCount == 0)
+		return;
+
 	this->frameCount = frameCount;
 	currentFrame = 0;
 	bitmap = bitmapArr;

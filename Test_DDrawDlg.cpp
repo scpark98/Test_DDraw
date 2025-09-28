@@ -89,6 +89,7 @@ BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
 	ON_WM_DESTROY()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
+	ON_WM_WINDOWPOSCHANGED()
 END_MESSAGE_MAP()
 
 
@@ -126,7 +127,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 	m_filename = _T("D:\\ink-and-wash.png");
 	m_img.load(m_filename);
-	//m_img.set_alpha(128);
+	m_img.set_alpha(128);
 
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
@@ -192,7 +193,6 @@ void CTestDDrawDlg::OnPaint()
 		//여기서 dlg의 배경을 그리려했으나 위의 CDialogEx::OnPaint(); 때문인지 배경 적용 안됨.
 		//OnEraseBkgnd();에서 배경 처리함.
 		//ID2D1DeviceContext 방식으로 변경 후 dc에도 잘 그려짐
-		OnRender();
 
 		CPaintDC dc(this);
 		CRect rc;
@@ -200,8 +200,10 @@ void CTestDDrawDlg::OnPaint()
 		GetClientRect(rc);
 		//CMemoryDC dc(&dc1, &rc);
 
-		CRect r(50, 50, 250, 250);
-		dc.FillSolidRect(r, red);
+		//CRect r(50, 50, 250, 250);
+		dc.FillSolidRect(rc, red);
+
+		OnRender();
 
 		Gdiplus::Graphics g(dc.m_hDC);
 		m_img.draw(&dc, 300, 300);
@@ -429,7 +431,7 @@ HRESULT CTestDDrawDlg::LoadBitmapFromFile2(PCWSTR uri, MyBitmap* myBitmap) {
 		&pDecoder
 	);
 
-	UINT frameCount = -1;
+	UINT frameCount = 0;
 	if (SUCCEEDED(hr))
 	{
 		hr = pDecoder->GetFrameCount(&frameCount);
@@ -737,8 +739,6 @@ void CTestDDrawDlg::OnDestroy()
 	//m_pWICFactory->Release();
 	//DiscardDeviceResources();
 	CoUninitialize();
-
-	SaveWindowPosition(&theApp, this);
 }
 
 void CTestDDrawDlg::OnLButtonDown(UINT nFlags, CPoint point)
@@ -961,4 +961,12 @@ HRESULT CTestDDrawDlg::OnRender()
 	}
 
 	return hr;
+}
+
+void CTestDDrawDlg::OnWindowPosChanged(WINDOWPOS* lpwndpos)
+{
+	CDialogEx::OnWindowPosChanged(lpwndpos);
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	SaveWindowPosition(&theApp, this);
 }
