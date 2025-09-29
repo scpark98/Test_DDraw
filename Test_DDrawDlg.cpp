@@ -90,6 +90,8 @@ BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_WINDOWPOSCHANGED()
+	ON_BN_CLICKED(IDOK, &CTestDDrawDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDCANCEL, &CTestDDrawDlg::OnBnClickedCancel)
 END_MESSAGE_MAP()
 
 
@@ -125,19 +127,22 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	m_filename = _T("D:\\ink-and-wash.png");
-	m_img.load(m_filename);
+	//m_filename = _T("D:\\ink-and-wash.png");
+	//m_filename = _T("D:\\bmp_256color.bmp");
+	m_img.load(IDB_PNG_INK_AND_WASH);
 	m_img.set_alpha(128);
 
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
 	HRESULT hr = CreateDeviceIndependentResources();
 	hr = CreateDeviceResources();
-	LoadBitmapFromFile(L"D:\\다운로드.jfif", &myBitmap);
-	//LoadBitmapFromFile(L"D:\\권나라.jpg", &myBitmap);
-	LoadBitmapFromFile2(L"loading.gif", mySequenceBitmap.get());
-	LoadBitmapFromFile2(L"snail_small.png", myCharacterBitmap.get());
-
+	//LoadBitmapFromFile(L"D:\\256_color.bmp", &myBitmap);
+	//LoadBitmapFromResource(_T("Bitmap"), IDB_BITMAP_TRUE, &myBitmap);
+	//LoadBitmapFromFile(L"D:\\ironman.jfif", &myBitmap);
+	LoadBitmapFromResource(_T("JFIF"), IDR_JFIF_IRONMAN, &myBitmap);
+	//LoadBitmapFromFile2(L"loading.gif", mySequenceBitmap.get());
+	//LoadBitmapFromFile2(L"snail_small.png", myCharacterBitmap.get());
+	LoadBitmapFromResource(_T("PNG"), IDB_ARROW_LEFT, &m_img_arrow_left);
 
 	m_resize.Create(this);
 	m_resize.Add(IDC_STATIC_IMG, 0, 0, 100, 100);
@@ -206,7 +211,7 @@ void CTestDDrawDlg::OnPaint()
 		OnRender();
 
 		Gdiplus::Graphics g(dc.m_hDC);
-		m_img.draw(&dc, 300, 300);
+		m_img.draw(&dc, 0, 0);
 	}
 }
 
@@ -301,13 +306,17 @@ HRESULT CTestDDrawDlg::CreateDeviceContext() {
 	return hr;
 }
 
-HRESULT CTestDDrawDlg::CreateDeviceIndependentResources() {
+HRESULT CTestDDrawDlg::CreateDeviceIndependentResources()
+{
 	HRESULT hr = S_OK;
+
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&m_Direct2dFactory));
-	if (SUCCEEDED(hr)) {
-		hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER,
-			IID_PPV_ARGS(&m_WICFactory));
+
+	if (SUCCEEDED(hr))
+	{
+		hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_WICFactory));
 	}
+
 	mySequenceBitmap = std::make_shared<MyBitmap>();
 	myCharacterBitmap = std::make_shared<MyBitmap>();
 
@@ -370,15 +379,111 @@ HRESULT CTestDDrawDlg::CreateDeviceResources() {
 	return hr;
 }
 
-HRESULT CTestDDrawDlg::LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap** ppBitmap) {
+HRESULT CTestDDrawDlg::LoadBitmapFromResource(CString type, UINT resourceID, ID2D1Bitmap** ppBitmap)
+{
+	IWICStream* pStream = NULL;
+	IWICBitmapDecoder* pDecoder = NULL;
+	//IWICBitmapFrameDecode* pIDecoderFrame = NULL;
+	ComPtr<IWICBitmapFrameDecode> pSource;
+	ComPtr<IWICFormatConverter> pConverter;
+	ComPtr<IWICBitmapScaler> pScaler;
+
+	// Resource management.
+	HRSRC imageResHandle = NULL;
+	HGLOBAL imageResDataHandle = NULL;
+	void* pImageFile = NULL;
+	DWORD imageFileSize = 0;
+	HRESULT hr = S_OK;
+
+	// Locate the resource in the application's executable.
+	imageResHandle = FindResource(GetModuleHandle(NULL), MAKEINTRESOURCE(resourceID), type);
+
+	if (SUCCEEDED(hr)) {
+		imageResDataHandle = LoadResource(GetModuleHandle(NULL), imageResHandle);
+		hr = (imageResDataHandle ? S_OK : E_FAIL);
+	}
+
+	if (SUCCEEDED(hr)) {
+		pImageFile = LockResource(imageResDataHandle);
+		hr = (pImageFile ? S_OK : E_FAIL);
+	}
+
+	if (SUCCEEDED(hr)) {
+		imageFileSize = SizeofResource(GetModuleHandle(NULL), imageResHandle);
+		hr = (imageFileSize ? S_OK : E_FAIL);
+	}
+
+	if (!m_WICFactory)
+		CreateDeviceIndependentResources();
+
+	if (!m_Direct2dContext)
+		CreateDeviceContext();
+
+	// Create a WIC stream to map onto the memory.
+	if (SUCCEEDED(hr)) {
+		hr = m_WICFactory->CreateStream(&pStream);
+	}
+
+	// Initialize the stream with the memory pointer and size.
+	if (SUCCEEDED(hr)) {
+		hr = pStream->InitializeFromMemory(
+			reinterpret_cast<BYTE*>(pImageFile),
+			imageFileSize);
+	}
+
+	// Create a decoder for the stream.
+	if (SUCCEEDED(hr)) {
+		hr = m_WICFactory->CreateDecoderFromStream(
+			pStream,                   // The stream to use to create the decoder
+			NULL,                          // Do not prefer a particular vendor
+			WICDecodeMetadataCacheOnLoad,  // Cache metadata when needed
+			&pDecoder);                   // Pointer to the decoder
+	}
+
+	// Retrieve the first bitmap frame.
+	if (SUCCEEDED(hr))
+	{
+		hr = pDecoder->GetFrame(0, &pSource);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = m_WICFactory->CreateFormatConverter(&pConverter);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = pConverter->Initialize(
+			pSource.Get(),
+			GUID_WICPixelFormat32bppPBGRA,
+			WICBitmapDitherTypeNone,
+			NULL,
+			0.f,
+			WICBitmapPaletteTypeMedianCut
+		);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = m_Direct2dContext->CreateBitmapFromWicBitmap(
+			pConverter.Get(),
+			NULL,
+			ppBitmap
+		);
+	}
+
+	return hr;	
+}
+
+HRESULT CTestDDrawDlg::LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap** ppBitmap)
+{
 	ComPtr<IWICBitmapDecoder> pDecoder;
 	ComPtr<IWICBitmapFrameDecode> pSource;
 	ComPtr<IWICStream> pStream;
 	ComPtr<IWICFormatConverter> pConverter;
 	ComPtr<IWICBitmapScaler> pScaler;
 
-	if (!m_WICFactory) CreateDeviceIndependentResources();
-	if (!m_Direct2dContext) CreateDeviceContext();
+	if (!m_WICFactory)
+		CreateDeviceIndependentResources();
+
+	if (!m_Direct2dContext)
+		CreateDeviceContext();
 
 	HRESULT hr = m_WICFactory->CreateDecoderFromFilename(
 		uri,
@@ -751,6 +856,7 @@ void CTestDDrawDlg::OnLButtonDown(UINT nFlags, CPoint point)
 void CTestDDrawDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	AfxMessageBox(_T("lbutton up"));
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
@@ -773,7 +879,8 @@ HRESULT CTestDDrawDlg::OnRender()
 		//	m_Direct2dContext->FillRectangle(&i, myCornflowerBlueBrush.Get());
 		//}
 
-		if (myBitmap) {
+		if (myBitmap)
+		{
 			m_Direct2dContext->DrawBitmap(myBitmap.Get(),
 				D2D1::RectF(
 					0.0f, 0.0f,
@@ -781,17 +888,30 @@ HRESULT CTestDDrawDlg::OnRender()
 				));
 		}
 
-		if (mySequenceBitmap) {
+		if (m_img_arrow_left)
+		{
+			m_Direct2dContext->DrawBitmap(m_img_arrow_left.Get(),
+				D2D1::RectF(
+					200.0f, 200.0f,
+					500.0f, 500.0f
+				));
+		}
+
+		if (mySequenceBitmap)
+		{
 			ComPtr<ID2D1Bitmap> tmp = mySequenceBitmap->GetBitmap();
-			if (tmp) {
+			if (tmp)
+			{
 				m_Direct2dContext->DrawImage(tmp.Get(),
 					mySequenceBitmap->GetBitmapPosition());
 			}
 		}
 
-		if (myCharacterBitmap) {
+		if (myCharacterBitmap)
+		{
 			ComPtr<ID2D1Bitmap> tmp = myCharacterBitmap->GetBitmap();
-			if (tmp) {
+			if (tmp)
+			{
 				// Affine transform init
 				ComPtr<ID2D1Effect> affineTransformEffect;
 				m_Direct2dContext->CreateEffect(
@@ -813,43 +933,30 @@ HRESULT CTestDDrawDlg::OnRender()
 				ComPtr<ID2D1Effect> edgeDetectionEffect;
 				ComPtr<ID2D1Effect> edgeDetectionEffect2;
 				ComPtr<ID2D1Effect> edgeDetectionEffect3;
-				m_Direct2dContext->CreateEffect(
-					CLSID_D2D1EdgeDetection,
-					&edgeDetectionEffect
-				);
-				m_Direct2dContext->CreateEffect(
-					CLSID_D2D1EdgeDetection,
-					&edgeDetectionEffect2
-				);
-				m_Direct2dContext->CreateEffect(
-					CLSID_D2D1EdgeDetection,
-					&edgeDetectionEffect3
-				);
+				m_Direct2dContext->CreateEffect(CLSID_D2D1EdgeDetection, &edgeDetectionEffect);
+				m_Direct2dContext->CreateEffect(CLSID_D2D1EdgeDetection, &edgeDetectionEffect2);
+				m_Direct2dContext->CreateEffect(CLSID_D2D1EdgeDetection, &edgeDetectionEffect3);
+
 				// Chromakey init
 				ComPtr<ID2D1Effect> chromakeyEffect;
 				ComPtr<ID2D1Effect> chromakeyEffect2;
 				ComPtr<ID2D1Effect> chromakeyEffect3;
-				m_Direct2dContext->CreateEffect(
-					CLSID_D2D1ChromaKey,
-					&chromakeyEffect
-				);
-				m_Direct2dContext->CreateEffect(
-					CLSID_D2D1ChromaKey,
-					&chromakeyEffect2
-				);
-				m_Direct2dContext->CreateEffect(
-					CLSID_D2D1ChromaKey,
-					&chromakeyEffect3
-				);
+				m_Direct2dContext->CreateEffect(CLSID_D2D1ChromaKey, &chromakeyEffect);
+				m_Direct2dContext->CreateEffect(CLSID_D2D1ChromaKey, &chromakeyEffect2);
+				m_Direct2dContext->CreateEffect(CLSID_D2D1ChromaKey, &chromakeyEffect3);
+
 				// Affine transform input
 				affineTransformEffect->SetInput(0, tmp.Get());
+
 				// Color matrix input
 				colorMatrixEffect->SetInputEffect(0, affineTransformEffect.Get());
 				colorMatrixEffect2->SetInputEffect(0, colorMatrixEffect.Get());
+
 				// Edge detection input
 				edgeDetectionEffect->SetInputEffect(0, affineTransformEffect.Get());
 				edgeDetectionEffect2->SetInputEffect(0, colorMatrixEffect.Get());
 				edgeDetectionEffect3->SetInputEffect(0, colorMatrixEffect2.Get());
+
 				// Chromakey input
 				chromakeyEffect->SetInputEffect(0, edgeDetectionEffect.Get());
 				chromakeyEffect2->SetInputEffect(0, edgeDetectionEffect2.Get());
@@ -925,6 +1032,7 @@ HRESULT CTestDDrawDlg::OnRender()
 		}
 
 		/*
+		* draw grid
 		for (int x = 0; x < width; x += 10) {
 			m_Direct2dContext->DrawLine(D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
 				D2D1::Point2F(static_cast<FLOAT>(x), rtSize.height),
@@ -969,4 +1077,16 @@ void CTestDDrawDlg::OnWindowPosChanged(WINDOWPOS* lpwndpos)
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	SaveWindowPosition(&theApp, this);
+}
+
+void CTestDDrawDlg::OnBnClickedOk()
+{
+	LoadBitmapFromFile(L"D:\\lobby.jpg", &myBitmap);
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedCancel()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CDialogEx::OnCancel();
 }

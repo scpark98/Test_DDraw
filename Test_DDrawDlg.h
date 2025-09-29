@@ -38,6 +38,7 @@ public:
 	ComPtr<IDXGISwapChain>       m_SwapChain;
 
 	ComPtr<ID2D1Bitmap>          myBitmap;
+	ComPtr<ID2D1Bitmap>          m_img_arrow_left;
 	std::shared_ptr<MyBitmap>    mySequenceBitmap;
 	std::shared_ptr<MyBitmap>    myCharacterBitmap;
 
@@ -52,6 +53,7 @@ public:
 	HRESULT CreateDeviceResources();
 	HRESULT LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap** ppBitmap);
 	HRESULT LoadBitmapFromFile2(PCWSTR uri, MyBitmap* myBitmap);
+	HRESULT LoadBitmapFromResource(CString type, UINT resourceID, ID2D1Bitmap** ppBitmap);
 	void DiscardDeviceResources();
 	void Update();
 	HRESULT OnRender();
@@ -85,4 +87,6 @@ public:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnWindowPosChanged(WINDOWPOS* lpwndpos);
+	afx_msg void OnBnClickedOk();
+	afx_msg void OnBnClickedCancel();
 };

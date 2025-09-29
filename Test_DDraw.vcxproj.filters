@@ -95,6 +95,22 @@
     <Image Include="res\Test_DDraw.ico">
       <Filter>리소스 파일</Filter>
     </Image>
+    <Image Include="..\..\..\256_color.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\..\arrow_left.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\..\ironman.jfif" />
+    <Image Include="..\..\..\bmp_256color.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\..\bmp_truecolor.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\..\ink-and-wash.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />

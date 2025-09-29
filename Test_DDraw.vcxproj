@@ -39,7 +39,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -54,7 +54,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -259,6 +259,12 @@
     <None Include="res\TestDDraw.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\256_color.bmp" />
+    <Image Include="..\..\..\arrow_left.png" />
+    <Image Include="..\..\..\bmp_256color.bmp" />
+    <Image Include="..\..\..\bmp_truecolor.bmp" />
+    <Image Include="..\..\..\ink-and-wash.png" />
+    <Image Include="..\..\..\ironman.jfif" />
     <Image Include="res\Test_DDraw.ico" />
   </ItemGroup>
   <ItemGroup>
