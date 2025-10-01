@@ -54,6 +54,12 @@
     <ClInclude Include="MyBitmap.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\directx\CSCD2Image\SCD2Image.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\directx\CSCD2Context\SCD2Context.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Test_DDraw.cpp">
@@ -79,6 +85,12 @@
     </ClCompile>
     <ClCompile Include="MyBitmap.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\directx\CSCD2Image\SCD2Image.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\directx\CSCD2Context\SCD2Context.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

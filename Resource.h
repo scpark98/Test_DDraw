@@ -15,8 +15,9 @@
 #define IDC_STATIC_IMG                  1000
 #define IDC_STATIC_IMG2                 1001
 #define IDC_BUTTON_INVALIDATE           1003
-#define IDC_BUTTON2                     1004
 #define IDC_BUTTON_INVALIDATE_STOP      1004
+#define IDC_BUTTON_INVALIDATE2          1005
+#define IDC_BUTTON_CHANGE_BACK          1005
 
 // Next default values for new objects
 // 
