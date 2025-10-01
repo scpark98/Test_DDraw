@@ -11,10 +11,12 @@
 #define IDR_JFIF_IRONMAN                132
 #define IDB_BITMAP_256                  133
 #define IDB_BITMAP_TRUE                 134
-#define IDB_PNG1                        135
 #define IDB_PNG_INK_AND_WASH            135
 #define IDC_STATIC_IMG                  1000
 #define IDC_STATIC_IMG2                 1001
+#define IDC_BUTTON_INVALIDATE           1003
+#define IDC_BUTTON2                     1004
+#define IDC_BUTTON_INVALIDATE_STOP      1004
 
 // Next default values for new objects
 // 
@@ -22,7 +24,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        136
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1003
+#define _APS_NEXT_CONTROL_VALUE         1004
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

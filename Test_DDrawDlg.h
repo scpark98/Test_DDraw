@@ -15,7 +15,7 @@
 
 #include "MyBitmap.h"
 
-//using namespace Microsoft::WRL;
+using namespace Microsoft::WRL;
 
 #include "Common/ResizeCtrl.h"
 #include "Common/SCGdiplusBitmap.h"
@@ -39,7 +39,8 @@ public:
 
 	ComPtr<ID2D1Bitmap>          myBitmap;
 	ComPtr<ID2D1Bitmap>          m_img_arrow_left;
-	std::shared_ptr<MyBitmap>    mySequenceBitmap;
+	ComPtr<ID2D1Bitmap>          m_img_ink_and_wash;
+	std::shared_ptr<MyBitmap>    m_img_gif;
 	std::shared_ptr<MyBitmap>    myCharacterBitmap;
 
 	ComPtr<ID2D1SolidColorBrush> myLightSlateGrayBrush;
@@ -58,6 +59,13 @@ public:
 	void Update();
 	HRESULT OnRender();
 	void OnResize(UINT width, UINT height);
+
+
+	enum TIMER_ID
+	{
+		timer_test = 0,
+	};
+
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -89,4 +97,8 @@ public:
 	afx_msg void OnWindowPosChanged(WINDOWPOS* lpwndpos);
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
+	afx_msg void OnBnClickedButton1();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnBnClickedButtonInvalidate();
+	afx_msg void OnBnClickedButtonInvalidateStop();
 };
