@@ -134,8 +134,14 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	//m_img.set_alpha(128);
 	
 	m_d2dc.init(m_hWnd);
-	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\lobby.jpg");
-	m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\snail.png");
+	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
+	m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDB_PNG_SNAIL_SMALL);
+	//m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_LOADING, _T("GIF"));
+	m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\loading.gif");
+	//m_d2gif.goto_frame(7);
+
+	//m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\lobby.jpg");
+	//m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\snail.png");
 	//m_d2img2.load(m_static_img2.m_hWnd, L"snail_small.png");
 	/*
 
@@ -206,12 +212,12 @@ void CTestDDrawDlg::OnPaint()
 
 		CPaintDC dc(this);
 		//long t0 = clock();
-		CRect rc;
+		//CRect rc;
 
-		GetClientRect(rc);
+		//GetClientRect(rc);
 		//CMemoryDC dc(&dc1, &rc);
 
-		dc.FillSolidRect(rc, red);
+		//dc.FillSolidRect(rc, red);
 
 		//CRect r(50, 50, 250, 250);
 		//dc.FillSolidRect(m_r, get_random_color());
@@ -220,13 +226,19 @@ void CTestDDrawDlg::OnPaint()
 		//test_render();
 
 		ID2D1DeviceContext* d2dc = m_d2dc.get_d2dc();
+		D2D1_SIZE_F dc_size = m_d2dc.get_size();
 
 		d2dc->BeginDraw();
 		d2dc->SetTransform(D2D1::Matrix3x2F::Identity());
 
 
-		d2dc->DrawBitmap(m_d2img.get(), D2D1::RectF(0, 0, rc.right, rc.bottom));
-		d2dc->DrawBitmap(m_d2img2.get(), D2D1::RectF(100, 100, 200, 300));
+		//d2dc->DrawBitmap(m_d2img.get(), D2D1::RectF(0, 0, rc.right, rc.bottom));
+		m_d2img.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
+
+		//D2D1_SIZE_F sz_img = m_d2img2.get_size();
+		m_d2img2.draw(d2dc, 100, 100);
+
+		m_d2gif.draw(d2dc, 200, 200);
 
 
 		HRESULT hr = d2dc->EndDraw();
@@ -1020,6 +1032,7 @@ void CTestDDrawDlg::OnBnClickedButtonInvalidateStop()
 
 void CTestDDrawDlg::OnBnClickedButtonChangeBack()
 {
-	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\ironman.jfif");
+	//m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\ironman.jfif");
+	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JFIF_IRONMAN, _T("JFIF"));
 	Invalidate();
 }

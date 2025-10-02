@@ -33,6 +33,7 @@ public:
 	CSCD2Context				m_d2dc;
 	CSCD2Image					m_d2img;
 	CSCD2Image					m_d2img2;
+	CSCD2Image					m_d2gif;
 
 	CResizeCtrl					m_resize;
 	CSCGdiplusBitmap			m_img;

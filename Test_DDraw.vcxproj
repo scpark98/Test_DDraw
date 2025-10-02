@@ -273,6 +273,7 @@
     <ResourceCompile Include="TestDDraw.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\images\loading.bin" />
     <None Include="res\TestDDraw.rc2" />
   </ItemGroup>
   <ItemGroup>
@@ -282,6 +283,14 @@
     <Image Include="..\..\..\bmp_truecolor.bmp" />
     <Image Include="..\..\..\ink-and-wash.png" />
     <Image Include="..\..\..\ironman.jfif" />
+    <Image Include="res\images\arrow_left.png" />
+    <Image Include="res\images\dx_logo.png" />
+    <Image Include="res\images\ink-and-wash.png" />
+    <Image Include="res\images\ironman.jfif" />
+    <Image Include="res\images\loading.gif" />
+    <Image Include="res\images\lobby.jpg" />
+    <Image Include="res\images\snail.png" />
+    <Image Include="res\images\snail_small.png" />
     <Image Include="res\Test_DDraw.ico" />
   </ItemGroup>
   <ItemGroup>

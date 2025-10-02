@@ -102,6 +102,9 @@
     <None Include="res\TestDDraw.rc2">
       <Filter>리소스 파일</Filter>
     </None>
+    <None Include="res\images\loading.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Test_DDraw.ico">
@@ -121,6 +124,28 @@
       <Filter>리소스 파일</Filter>
     </Image>
     <Image Include="..\..\..\ink-and-wash.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\images\arrow_left.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\images\dx_logo.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\images\ink-and-wash.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\images\snail.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\images\snail_small.png">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\images\lobby.jpg">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\images\ironman.jfif" />
+    <Image Include="res\images\loading.gif">
       <Filter>리소스 파일</Filter>
     </Image>
   </ItemGroup>
