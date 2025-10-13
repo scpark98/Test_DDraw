@@ -273,7 +273,11 @@
     <ResourceCompile Include="TestDDraw.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\images\calling.bin" />
+    <None Include="res\images\checking.bin" />
     <None Include="res\images\loading.bin" />
+    <None Include="res\images\NHQV06.bin" />
+    <None Include="res\images\xmas.bin" />
     <None Include="res\TestDDraw.rc2" />
   </ItemGroup>
   <ItemGroup>

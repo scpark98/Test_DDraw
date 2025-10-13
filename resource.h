@@ -14,21 +14,26 @@
 #define IDB_SNAIL                       140
 #define IDB_PNG_SNAIL_SMALL             141
 #define IDR_JFIF_IRONMAN                142
-#define IDR_GIF1                        144
 #define IDR_GIF_LOADING                 144
+#define IDR_GIF_CHECKING                145
+#define IDR_GIF_CALLING                 146
+#define IDR_GIF_NHQV06                  147
+#define IDR_WEBP1                       148
+#define IDR_WEBP_XMAS                   148
 #define IDC_STATIC_IMG                  1000
 #define IDC_STATIC_IMG2                 1001
 #define IDC_BUTTON_INVALIDATE           1003
 #define IDC_BUTTON_INVALIDATE_STOP      1004
 #define IDC_BUTTON_CHANGE_BACK          1005
+#define IDC_CHECK_GIF                   1006
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        145
+#define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1004
+#define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

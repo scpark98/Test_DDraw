@@ -34,12 +34,16 @@ public:
 	CSCD2Image					m_d2img;
 	CSCD2Image					m_d2img2;
 	CSCD2Image					m_d2gif;
+	CSCD2Image					m_d2gif2;
+	CSCD2Image					m_d2webp;
 
 	CResizeCtrl					m_resize;
 	CSCGdiplusBitmap			m_img;
 	CString						m_filename;
 
 	CRect						m_r;
+
+	LRESULT						on_message_from_CSCD2Image(WPARAM wParam, LPARAM lParam);
 
 	/*
 	ComPtr<ID2D1Factory1>        m_d2factory;
@@ -114,4 +118,6 @@ public:
 	afx_msg void OnBnClickedButtonInvalidate();
 	afx_msg void OnBnClickedButtonInvalidateStop();
 	afx_msg void OnBnClickedButtonChangeBack();
+	afx_msg void OnBnClickedCheckGif();
+	afx_msg void OnDropFiles(HDROP hDropInfo);
 };

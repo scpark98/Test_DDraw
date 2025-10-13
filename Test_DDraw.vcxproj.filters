@@ -105,6 +105,18 @@
     <None Include="res\images\loading.bin">
       <Filter>리소스 파일</Filter>
     </None>
+    <None Include="res\images\checking.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="res\images\calling.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="res\images\NHQV06.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="res\images\xmas.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Test_DDraw.ico">

@@ -88,6 +88,9 @@ BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_INVALIDATE, &CTestDDrawDlg::OnBnClickedButtonInvalidate)
 	ON_BN_CLICKED(IDC_BUTTON_INVALIDATE_STOP, &CTestDDrawDlg::OnBnClickedButtonInvalidateStop)
 	ON_BN_CLICKED(IDC_BUTTON_CHANGE_BACK, &CTestDDrawDlg::OnBnClickedButtonChangeBack)
+	ON_BN_CLICKED(IDC_CHECK_GIF, &CTestDDrawDlg::OnBnClickedCheckGif)
+	ON_REGISTERED_MESSAGE(Message_CSCD2Image, &CTestDDrawDlg::on_message_from_CSCD2Image)
+	ON_WM_DROPFILES()
 END_MESSAGE_MAP()
 
 
@@ -136,30 +139,18 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	m_d2dc.init(m_hWnd);
 	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
 	m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDB_PNG_SNAIL_SMALL);
-	m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_LOADING, _T("GIF"));
-	//m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\loading.gif");
-	//m_d2gif.goto_frame(7);
+	m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_NHQV06, _T("GIF"));
+	m_d2gif.set_parent(m_hWnd);
 
-	//m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\lobby.jpg");
-	//m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\snail.png");
-	//m_d2img2.load(m_static_img2.m_hWnd, L"snail_small.png");
-	/*
+	m_d2gif2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_CALLING, _T("GIF"));
+	m_d2gif2.set_parent(m_hWnd);
 
-	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-
-	HRESULT hr = CreateDeviceIndependentResources();
-	hr = CreateDeviceResources();
-	LoadBitmapFromFile(L"D:\\data_transfer.webp", &m_img_back);
-	//LoadBitmapFromResource(_T("Bitmap"), IDB_BITMAP_TRUE, &m_img);
-	//LoadBitmapFromFile(L"D:\\ironman.jfif", &m_img);
-	//LoadBitmapFromResource(_T("JFIF"), IDR_JFIF_IRONMAN, &m_img);
-	LoadBitmapFromFile2(L"./loading.gif", m_img_gif.get());
-	//LoadBitmapFromFile2(L"snail_small.png", myCharacterBitmap.get());
-	LoadBitmapFromResource(_T("PNG"), IDB_ARROW_LEFT, &m_img_arrow_left);
-	LoadBitmapFromResource(_T("PNG"), IDB_PNG_INK_AND_WASH, &m_img_ink_and_wash);
-	*/
+	m_d2webp.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_WEBP_XMAS, _T("WEBP"));
+	m_d2webp.set_parent(m_hWnd);
 
 	RestoreWindowPosition(&theApp, this);
+
+	DragAcceptFiles();
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -234,13 +225,17 @@ void CTestDDrawDlg::OnPaint()
 		//black으로 칠한 후
 		d2dc->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
-		//배경그림을 그리고
+		//배경그림을 그리고 (비율을 유지한 채 가로 또는 세로에 맞게 확대/축소하여 그림)
 		m_d2img.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
 
+		//x, y에 그림
 		m_d2img2.draw(d2dc, m_r.left, m_r.top);
 
-		m_d2gif.draw(d2dc, 200, 200);
+		m_d2gif.draw(d2dc, 100, 0, 500);
+		m_d2gif2.draw(d2dc, 400, 0);
 
+		//x, y에 그리되 w는 100으로 하고 h는 비율에 맞게 조정하여 그림
+		m_d2webp.draw(d2dc, 100, 500, 300);
 
 		HRESULT hr = d2dc->EndDraw();
 
@@ -1036,4 +1031,35 @@ void CTestDDrawDlg::OnBnClickedButtonChangeBack()
 	//m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\ironman.jfif");
 	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JFIF_IRONMAN, _T("JFIF"));
 	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedCheckGif()
+{
+	m_d2gif.play();
+	m_d2gif2.play();
+	m_d2webp.play();
+}
+
+LRESULT CTestDDrawDlg::on_message_from_CSCD2Image(WPARAM wParam, LPARAM lParam)
+{
+	TRACE(_T("index = %d\n"), (int)lParam);
+	Invalidate();
+
+	return 0;
+}
+
+void CTestDDrawDlg::OnDropFiles(HDROP hDropInfo)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	TCHAR sfile[MAX_PATH];
+
+	DragQueryFile(hDropInfo, 0, sfile, MAX_PATH);
+
+	if (is_exist_keyword(get_part(sfile, fn_ext), FILE_EXTENSION_IMAGE, false, true))
+	{
+		m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), sfile);
+		Invalidate();
+	}
+
+	CDialogEx::OnDropFiles(hDropInfo);
 }
