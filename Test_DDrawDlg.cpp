@@ -7,11 +7,6 @@
 #include "Test_DDrawDlg.h"
 #include "afxdialogex.h"
 
-#pragma comment(lib, "d2d1.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "Windowscodecs.lib")
-#pragma comment(lib, "d3d11.lib")
-
 #include "Common/Functions.h"
 #include "Common/MemoryDC.h"
 

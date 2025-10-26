@@ -4,18 +4,7 @@
 
 #pragma once
 
-#include <d2d1_1.h>
-#include <d2d1helper.h>
-#include <d2d1effects_2.h>
-
-//#include <dwrite.h>
-//#include <wincodec.h>
-#include <d3d11.h>
-#include <wrl/client.h>
-
 #include "MyBitmap.h"
-
-using namespace Microsoft::WRL;
 
 #include "Common/ResizeCtrl.h"
 #include "Common/SCGdiplusBitmap.h"
@@ -45,33 +34,6 @@ public:
 
 	LRESULT						on_message_from_CSCD2Image(WPARAM wParam, LPARAM lParam);
 
-	/*
-	ComPtr<ID2D1Factory1>        m_d2factory;
-	ComPtr<IWICImagingFactory2>  m_WICFactory;
-	ComPtr<ID2D1Device>          m_d2device;
-	ComPtr<ID2D1DeviceContext>   m_d2context;
-	ComPtr<IDXGISwapChain>       m_swapchain;
-
-	ComPtr<ID2D1Bitmap>          m_img_back;
-	ComPtr<ID2D1Bitmap>          m_img_arrow_left;
-	ComPtr<ID2D1Bitmap>          m_img_ink_and_wash;
-	std::shared_ptr<MyBitmap>    m_img_gif;
-	std::shared_ptr<MyBitmap>    myCharacterBitmap;
-
-	ComPtr<ID2D1SolidColorBrush> myLightSlateGrayBrush;
-	ComPtr<ID2D1SolidColorBrush> myCornflowerBlueBrush;
-
-
-	HRESULT CreateDeviceContext();
-	D2D1_SIZE_U CalculateD2DWindowSize();
-
-	HRESULT CreateDeviceIndependentResources();
-	HRESULT CreateDeviceResources();
-	HRESULT LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap** ppBitmap);
-	HRESULT LoadBitmapFromFile2(PCWSTR uri, MyBitmap* img);
-	HRESULT LoadBitmapFromResource(CString type, UINT resourceID, ID2D1Bitmap** ppBitmap);
-	void DiscardDeviceResources();
-	*/
 	void Update();
 	HRESULT OnRender();
 	void OnResize(UINT width, UINT height);
