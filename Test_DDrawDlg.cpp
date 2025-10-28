@@ -132,8 +132,20 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	//m_img.set_alpha(128);
 	
 	m_d2dc.init(m_hWnd);
-	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
+
+	int w = 700;// 1920;// 700;
+	int h = 600;// 1080;
+	int c = 4;// 3;
+	uint8_t* data = new uint8_t[w * h * c];
+	read_raw(_T("d:\\snail_700_600_32.raw"), data, w * h * c);
+	//read_raw(_T("d:\\mountain_1920_1080_24_BGR.raw"), data, w * h * c);
+	m_d2raw.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), data, w, h, c);
+
+	delete[] data;
+
+	m_d2back.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
 	m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDB_PNG_SNAIL_SMALL);
+
 	m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_NHQV06, _T("GIF"));
 	m_d2gif.set_parent(m_hWnd);
 
@@ -221,16 +233,24 @@ void CTestDDrawDlg::OnPaint()
 		d2dc->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
 		//배경그림을 그리고 (비율을 유지한 채 가로 또는 세로에 맞게 확대/축소하여 그림)
-		m_d2img.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
+		m_d2back.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
 
 		//x, y에 그림
 		m_d2img2.draw(d2dc, m_r.left, m_r.top);
 
-		m_d2gif.draw(d2dc, 100, 0, 500);
-		m_d2gif2.draw(d2dc, 400, 0);
+		int cx = 400;
+		int x = 10;
+		int y = dc_size.height / 2.0f - cx / 2.0f;
+		m_d2gif.draw(d2dc, x, y, cx);
 
-		//x, y에 그리되 w는 100으로 하고 h는 비율에 맞게 조정하여 그림
-		m_d2webp.draw(d2dc, 100, 500, 300);
+		x += 10 + cx;
+		m_d2gif2.draw(d2dc, x, y, cx);
+
+		x += 10 + cx;
+		m_d2webp.draw(d2dc, x, y, cx);
+
+		x += 10 + cx;
+		m_d2raw.draw(d2dc, x, y, cx);
 
 		HRESULT hr = d2dc->EndDraw();
 
@@ -691,7 +711,7 @@ void CTestDDrawDlg::OnSize(UINT nType, int cx, int cy)
 {
 	CDialogEx::OnSize(nType, cx, cy);
 
-	m_d2img.on_resize(m_d2dc.get_d2dc(), m_d2dc.get_swapchain(), cx, cy);
+	m_d2back.on_resize(m_d2dc.get_d2dc(), m_d2dc.get_swapchain(), cx, cy);
 	Invalidate();
 	//OnResize(cx, cy);
 	// 
@@ -1024,7 +1044,7 @@ void CTestDDrawDlg::OnBnClickedButtonInvalidateStop()
 void CTestDDrawDlg::OnBnClickedButtonChangeBack()
 {
 	//m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), L"D:\\ironman.jfif");
-	m_d2img.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JFIF_IRONMAN, _T("JFIF"));
+	m_d2back.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JFIF_IRONMAN, _T("JFIF"));
 	Invalidate();
 }
 
@@ -1052,8 +1072,28 @@ void CTestDDrawDlg::OnDropFiles(HDROP hDropInfo)
 
 	if (is_exist_keyword(get_part(sfile, fn_ext), FILE_EXTENSION_IMAGE, false, true))
 	{
-		m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), sfile);
+		m_img.load(sfile);
+		//m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), sfile);
+
+		if (m_img.is_empty())
+			return;
+
+		int w = m_img.width;
+		int h = m_img.height;
+		int c = m_img.channel;
+		m_img.get_raw_data();
+		//uint8_t* data = new uint8_t[w * h * c];
+		//read_raw(sfile, data, w * h * c);
+		//read_raw(_T("d:\\mountain_1920_1080_24_BGR.raw"), data, w * h * c);
+		m_d2raw.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), m_img.data, w, h, c);
+
+		//delete[] data;
+
+
+
 		Invalidate();
+
+		//m_img.save_raw_data();
 	}
 
 	CDialogEx::OnDropFiles(hDropInfo);

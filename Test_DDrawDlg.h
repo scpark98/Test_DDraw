@@ -20,11 +20,16 @@ public:
 	CTestDDrawDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
 
 	CSCD2Context				m_d2dc;
-	CSCD2Image					m_d2img;
+	CSCD2Image					m_d2back;
 	CSCD2Image					m_d2img2;
 	CSCD2Image					m_d2gif;
 	CSCD2Image					m_d2gif2;
 	CSCD2Image					m_d2webp;
+	CSCD2Image					m_d2raw;
+
+	CSCD2Image					m_d2memDC;	//CMemoryDC에 그려진 결과를 CSCD2Image로 전환
+	void						create_image_from_memory();
+
 
 	CResizeCtrl					m_resize;
 	CSCGdiplusBitmap			m_img;
