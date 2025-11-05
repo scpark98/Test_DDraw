@@ -145,7 +145,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 
 	m_d2back.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
 	m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDB_PNG_SNAIL_SMALL);
-
+	/*
 	m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_NHQV06, _T("GIF"));
 	m_d2gif.set_parent(m_hWnd);
 
@@ -154,7 +154,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 
 	m_d2webp.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_WEBP_XMAS, _T("WEBP"));
 	m_d2webp.set_parent(m_hWnd);
-
+	*/
 	RestoreWindowPosition(&theApp, this);
 
 	DragAcceptFiles();
@@ -230,14 +230,37 @@ void CTestDDrawDlg::OnPaint()
 		d2dc->SetTransform(D2D1::Matrix3x2F::Identity());
 
 		//black으로 칠한 후
-		d2dc->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+		d2dc->Clear(D2D1::ColorF(D2D1::ColorF::White));
+
+		ID2D1SolidColorBrush* br;
+		d2dc->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &br);
+		
+
+		ID2D1StrokeStyle1* stroke_style;
+		m_d2dc.get_factory()->CreateStrokeStyle(D2D1::StrokeStyleProperties1(
+			D2D1_CAP_STYLE_FLAT,
+			D2D1_CAP_STYLE_FLAT,
+			D2D1_CAP_STYLE_FLAT,
+			D2D1_LINE_JOIN_MITER,
+			0.1f,
+			D2D1_DASH_STYLE_SOLID,
+			10.0f, D2D1_STROKE_TRANSFORM_TYPE_FIXED),
+			nullptr, 0, &stroke_style);
+
+		d2dc->DrawLine(D2D1::Point2F(10.f, 10.f), D2D1::Point2F(200.f, 10.f), br, 1.0f, stroke_style);
+		d2dc->DrawLine(D2D1::Point2F(10.f, 15.f), D2D1::Point2F(200.f, 15.f), br, 2.0f, stroke_style);
+		d2dc->DrawLine(D2D1::Point2F(10.f, 20.f), D2D1::Point2F(200.f, 20.f), br, 3.0f, stroke_style);
+
+		draw_rect(d2dc, D2D1::RectF(10, 100, 100, 200), Gdiplus::Color::Red, 0.1f);
+
 
 		//배경그림을 그리고 (비율을 유지한 채 가로 또는 세로에 맞게 확대/축소하여 그림)
-		m_d2back.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
+		//m_d2back.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
 
 		//x, y에 그림
-		m_d2img2.draw(d2dc, m_r.left, m_r.top);
+		//m_d2img2.draw(d2dc, 10, dc_size.height / 2.0f - m_d2img2.get_height() / 2.0f);
 
+		/*
 		int cx = 400;
 		int x = 10;
 		int y = dc_size.height / 2.0f - cx / 2.0f;
@@ -251,11 +274,16 @@ void CTestDDrawDlg::OnPaint()
 
 		x += 10 + cx;
 		m_d2raw.draw(d2dc, x, y, cx);
+		*/
 
 		HRESULT hr = d2dc->EndDraw();
 
 		if (SUCCEEDED(hr))
 			hr = m_d2dc.get_swapchain()->Present(0, 0);
+
+		//dc를 이용해서 그리기를 추가할 경우는 위의 swapchain()까지 끝나고 한다.
+		dc.MoveTo(10, 30);
+		dc.LineTo(200, 30);
 
 		//m_d2img.render();
 		//m_d2img2.render();
@@ -1021,10 +1049,10 @@ void CTestDDrawDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	if (nIDEvent == timer_test)
 	{
-		m_r.left = random19937(0, 1900);
-		m_r.top = random19937(0, 1900);
-		m_r.right = m_r.left + 400;
-		m_r.bottom = m_r.top + 400;
+		m_r_random.left = random19937(0, 1900);
+		m_r_random.top = random19937(0, 1900);
+		m_r_random.right = m_r_random.left + 400;
+		m_r_random.bottom = m_r_random.top + 400;
 		Invalidate();
 	}
 

@@ -35,7 +35,7 @@ public:
 	CSCGdiplusBitmap			m_img;
 	CString						m_filename;
 
-	CRect						m_r;
+	CRect						m_r_random;
 
 	LRESULT						on_message_from_CSCD2Image(WPARAM wParam, LPARAM lParam);
 
