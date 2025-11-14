@@ -86,6 +86,7 @@ BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CHECK_GIF, &CTestDDrawDlg::OnBnClickedCheckGif)
 	ON_REGISTERED_MESSAGE(Message_CSCD2Image, &CTestDDrawDlg::on_message_from_CSCD2Image)
 	ON_WM_DROPFILES()
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 
@@ -145,7 +146,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 
 	m_d2back.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
 	m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDB_PNG_SNAIL_SMALL);
-	/*
+
 	m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_NHQV06, _T("GIF"));
 	m_d2gif.set_parent(m_hWnd);
 
@@ -154,7 +155,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 
 	m_d2webp.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_WEBP_XMAS, _T("WEBP"));
 	m_d2webp.set_parent(m_hWnd);
-	*/
+
 	RestoreWindowPosition(&theApp, this);
 
 	DragAcceptFiles();
@@ -255,12 +256,11 @@ void CTestDDrawDlg::OnPaint()
 
 
 		//배경그림을 그리고 (비율을 유지한 채 가로 또는 세로에 맞게 확대/축소하여 그림)
-		//m_d2back.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
+		m_d2back.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
 
 		//x, y에 그림
-		//m_d2img2.draw(d2dc, 10, dc_size.height / 2.0f - m_d2img2.get_height() / 2.0f);
+		m_d2img2.draw(d2dc, 10, dc_size.height / 2.0f - m_d2img2.get_height() / 2.0f);
 
-		/*
 		int cx = 400;
 		int x = 10;
 		int y = dc_size.height / 2.0f - cx / 2.0f;
@@ -274,16 +274,20 @@ void CTestDDrawDlg::OnPaint()
 
 		x += 10 + cx;
 		m_d2raw.draw(d2dc, x, y, cx);
-		*/
 
 		HRESULT hr = d2dc->EndDraw();
 
 		if (SUCCEEDED(hr))
 			hr = m_d2dc.get_swapchain()->Present(0, 0);
 
+		draw_line(&dc, 0, 0, m_pt.x, m_pt.y, red, 5, PS_SOLID, R2_XORPEN);
+
+		//이 코드는 빈번한 Invalidate()에 대해 깜빡임이 발생한다.
+		Gdiplus::Graphics g(dc.m_hDC);
+		Gdiplus::Pen pen(Gdiplus::Color::Blue, 5);
+		g.DrawLine(&pen, m_pt.x, m_pt.y, 200, 0);
+
 		//dc를 이용해서 그리기를 추가할 경우는 위의 swapchain()까지 끝나고 한다.
-		dc.MoveTo(10, 30);
-		dc.LineTo(200, 30);
 
 		//m_d2img.render();
 		//m_d2img2.render();
@@ -1086,6 +1090,8 @@ void CTestDDrawDlg::OnBnClickedCheckGif()
 LRESULT CTestDDrawDlg::on_message_from_CSCD2Image(WPARAM wParam, LPARAM lParam)
 {
 	TRACE(_T("index = %d\n"), (int)lParam);
+	D2D1_SIZE_F sz = m_d2dc.get_size();
+	m_d2back.on_resize(m_d2dc.get_d2dc(), m_d2dc.get_swapchain(), sz.width, sz.height);
 	Invalidate();
 
 	return 0;
@@ -1125,4 +1131,14 @@ void CTestDDrawDlg::OnDropFiles(HDROP hDropInfo)
 	}
 
 	CDialogEx::OnDropFiles(hDropInfo);
+}
+
+void CTestDDrawDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	D2D1_SIZE_F sz = m_d2dc.get_size();
+	m_d2back.on_resize(m_d2dc.get_d2dc(), m_d2dc.get_swapchain(), sz.width, sz.height);
+	m_pt = point;
+	Invalidate();
+	CDialogEx::OnMouseMove(nFlags, point);
 }

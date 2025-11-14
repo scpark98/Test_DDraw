@@ -37,6 +37,8 @@ public:
 
 	CRect						m_r_random;
 
+	CPoint						m_pt;
+
 	LRESULT						on_message_from_CSCD2Image(WPARAM wParam, LPARAM lParam);
 
 	void Update();
@@ -87,4 +89,5 @@ public:
 	afx_msg void OnBnClickedButtonChangeBack();
 	afx_msg void OnBnClickedCheckGif();
 	afx_msg void OnDropFiles(HDROP hDropInfo);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 };
