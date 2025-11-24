@@ -71,6 +71,9 @@ BOOL CTestDDrawApp::InitInstance()
 	// 적절한 내용으로 수정해야 합니다.
 	SetRegistryKey(_T("로컬 애플리케이션 마법사에서 생성된 애플리케이션"));
 
+	//COINIT_MULTITHREADED를 사용하면 프로그램 종료 시 런타임 에러 발생함.
+	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
 	CTestDDrawDlg dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
@@ -105,3 +108,11 @@ BOOL CTestDDrawApp::InitInstance()
 	return FALSE;
 }
 
+
+int CTestDDrawApp::ExitInstance()
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	CoUninitialize();
+
+	return CWinApp::ExitInstance();
+}

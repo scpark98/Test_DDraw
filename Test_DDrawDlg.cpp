@@ -743,7 +743,11 @@ void CTestDDrawDlg::OnSize(UINT nType, int cx, int cy)
 {
 	CDialogEx::OnSize(nType, cx, cy);
 
-	m_d2back.on_resize(m_d2dc.get_d2dc(), m_d2dc.get_swapchain(), cx, cy);
+	if (!m_d2dc.get_d2dc())
+		return;
+
+	m_d2dc.on_size_changed(cx, cy);
+
 	Invalidate();
 	//OnResize(cx, cy);
 	// 
@@ -1091,7 +1095,7 @@ LRESULT CTestDDrawDlg::on_message_from_CSCD2Image(WPARAM wParam, LPARAM lParam)
 {
 	TRACE(_T("index = %d\n"), (int)lParam);
 	D2D1_SIZE_F sz = m_d2dc.get_size();
-	m_d2back.on_resize(m_d2dc.get_d2dc(), m_d2dc.get_swapchain(), sz.width, sz.height);
+	m_d2dc.on_size_changed(sz.width, sz.height);
 	Invalidate();
 
 	return 0;
@@ -1136,8 +1140,9 @@ void CTestDDrawDlg::OnDropFiles(HDROP hDropInfo)
 void CTestDDrawDlg::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	D2D1_SIZE_F sz = m_d2dc.get_size();
-	m_d2back.on_resize(m_d2dc.get_d2dc(), m_d2dc.get_swapchain(), sz.width, sz.height);
+	//D2D1_SIZE_F sz = m_d2dc.get_size();
+	//m_d2dc.on_size_changed(sz.width, sz.height);
+
 	m_pt = point;
 	Invalidate();
 	CDialogEx::OnMouseMove(nFlags, point);
