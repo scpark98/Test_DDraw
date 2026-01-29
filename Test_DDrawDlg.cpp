@@ -144,9 +144,12 @@ BOOL CTestDDrawDlg::OnInitDialog()
 
 	delete[] data;
 
-	m_d2back.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
+	//m_d2back.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_JPG_LOBBY, _T("JPG"));
 	m_d2img2.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDB_PNG_SNAIL_SMALL);
 
+	//m_d2back.blur_effect();
+	//m_d2back.save(_T("d:\\blur.png"));
+	/*
 	m_d2gif.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_GIF_NHQV06, _T("GIF"));
 	m_d2gif.set_parent(m_hWnd);
 
@@ -155,6 +158,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 
 	m_d2webp.load(m_d2dc.get_WICFactory(), m_d2dc.get_d2dc(), IDR_WEBP_XMAS, _T("WEBP"));
 	m_d2webp.set_parent(m_hWnd);
+	*/
 
 	RestoreWindowPosition(&theApp, this);
 
@@ -211,9 +215,9 @@ void CTestDDrawDlg::OnPaint()
 
 		CPaintDC dc(this);
 		//long t0 = clock();
-		//CRect rc;
+		CRect rc;
 
-		//GetClientRect(rc);
+		GetClientRect(rc);
 		//CMemoryDC dc(&dc1, &rc);
 
 		//dc.FillSolidRect(rc, red);
@@ -236,7 +240,7 @@ void CTestDDrawDlg::OnPaint()
 		ID2D1SolidColorBrush* br;
 		d2dc->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &br);
 		
-
+		//stroke thickness가 소숫점 설정이 적용되는지 확인하기 위해.
 		ID2D1StrokeStyle1* stroke_style;
 		m_d2dc.get_factory()->CreateStrokeStyle(D2D1::StrokeStyleProperties1(
 			D2D1_CAP_STYLE_FLAT,
@@ -259,21 +263,35 @@ void CTestDDrawDlg::OnPaint()
 		m_d2back.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
 
 		//x, y에 그림
-		m_d2img2.draw(d2dc, 10, dc_size.height / 2.0f - m_d2img2.get_height() / 2.0f);
+		//m_d2img2.draw(d2dc, 10, dc_size.height / 2.0f - m_d2img2.get_height() / 2.0f);
 
+		//gif 이미지들 출력
 		int cx = 400;
 		int x = 10;
 		int y = dc_size.height / 2.0f - cx / 2.0f;
-		m_d2gif.draw(d2dc, x, y, cx);
+		if (m_d2gif.is_valid())
+			m_d2gif.draw(d2dc, x, y, cx);
 
 		x += 10 + cx;
-		m_d2gif2.draw(d2dc, x, y, cx);
+		if (m_d2gif2.is_valid())
+			m_d2gif2.draw(d2dc, x, y, cx);
 
 		x += 10 + cx;
-		m_d2webp.draw(d2dc, x, y, cx);
+		if (m_d2webp.is_valid())
+			m_d2webp.draw(d2dc, x, y, cx);
 
 		x += 10 + cx;
-		m_d2raw.draw(d2dc, x, y, cx);
+		if (m_d2raw.is_valid())
+			m_d2raw.draw(d2dc, x, y, cx);
+
+
+		//text output sample code
+		CRect text_rect = draw_text(d2dc, rc, _T("Test 텍스트. 한글!"), 20.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::White, Gdiplus::Color::Black, DT_CENTER | DT_VCENTER);
+		draw_rect(d2dc, text_rect, Gdiplus::Color::Red);
+
+		//draw 2 lines cross
+		draw_line(d2dc, rc.left, rc.top, rc.right, rc.bottom, Gdiplus::Color::Red);
+		draw_line(d2dc, rc.left, rc.bottom, rc.right, rc.top, Gdiplus::Color::Blue);
 
 		HRESULT hr = d2dc->EndDraw();
 
@@ -783,7 +801,12 @@ void CTestDDrawDlg::OnLButtonDown(UINT nFlags, CPoint point)
 void CTestDDrawDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	AfxMessageBox(_T("lbutton up"));
+	//AfxMessageBox(_T("lbutton up"));
+	D2D1_RECT_U r = { 0, 0, 100, 100 };
+	CSCD2Image img(m_d2back.get_WICFactory2(), m_d2dc.get_d2dc(), 100, 100);
+	m_d2back.get_sub_img(r, &img);
+	img.save(_T("d:\\sub.png"));
+
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
@@ -1143,7 +1166,7 @@ void CTestDDrawDlg::OnMouseMove(UINT nFlags, CPoint point)
 	//D2D1_SIZE_F sz = m_d2dc.get_size();
 	//m_d2dc.on_size_changed(sz.width, sz.height);
 
-	m_pt = point;
-	Invalidate();
+	//m_pt = point;
+	//Invalidate();
 	CDialogEx::OnMouseMove(nFlags, point);
 }
