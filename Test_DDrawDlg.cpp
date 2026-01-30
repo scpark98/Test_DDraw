@@ -65,6 +65,7 @@ void CTestDDrawDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_STATIC_IMG, m_static_img);
 	DDX_Control(pDX, IDC_STATIC_IMG2, m_static_img2);
+	DDX_Control(pDX, IDC_EDIT_TEXT, m_edit_text);
 }
 
 BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
@@ -87,6 +88,13 @@ BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
 	ON_REGISTERED_MESSAGE(Message_CSCD2Image, &CTestDDrawDlg::on_message_from_CSCD2Image)
 	ON_WM_DROPFILES()
 	ON_WM_MOUSEMOVE()
+	ON_EN_CHANGE(IDC_EDIT_TEXT, &CTestDDrawDlg::OnEnChangeEditText)
+	ON_BN_CLICKED(IDC_RADIO_DT_LEFT, &CTestDDrawDlg::OnBnClickedRadioDtLeft)
+	ON_BN_CLICKED(IDC_RADIO_DT_CENTER, &CTestDDrawDlg::OnBnClickedRadioDtCenter)
+	ON_BN_CLICKED(IDC_RADIO_DT_RIGHT, &CTestDDrawDlg::OnBnClickedRadioDtRight)
+	ON_BN_CLICKED(IDC_RADIO_DT_TOP, &CTestDDrawDlg::OnBnClickedRadioDtTop)
+	ON_BN_CLICKED(IDC_RADIO_DT_VCENTER, &CTestDDrawDlg::OnBnClickedRadioDtVcenter)
+	ON_BN_CLICKED(IDC_RADIO_DT_BOTTOM, &CTestDDrawDlg::OnBnClickedRadioDtBottom)
 END_MESSAGE_MAP()
 
 
@@ -125,7 +133,9 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	m_resize.Create(this);
 	m_resize.Add(IDC_STATIC_IMG, 0, 0, 100, 100);
 	m_resize.Add(IDC_STATIC_IMG2, 0, 0, 0, 0);
+	m_resize.Add(IDC_EDIT_TEXT, 0, 0, 0, 0);
 
+	m_edit_text.set_text(_T("I\nI\nI"));
 
 	//m_filename = _T("D:\\ink-and-wash.png");
 	//m_filename = _T("D:\\bmp_256color.bmp");
@@ -256,8 +266,6 @@ void CTestDDrawDlg::OnPaint()
 		d2dc->DrawLine(D2D1::Point2F(10.f, 15.f), D2D1::Point2F(200.f, 15.f), br, 2.0f, stroke_style);
 		d2dc->DrawLine(D2D1::Point2F(10.f, 20.f), D2D1::Point2F(200.f, 20.f), br, 3.0f, stroke_style);
 
-		draw_rect(d2dc, D2D1::RectF(10, 100, 100, 200), Gdiplus::Color::Red, 0.1f);
-
 
 		//배경그림을 그리고 (비율을 유지한 채 가로 또는 세로에 맞게 확대/축소하여 그림)
 		m_d2back.draw(d2dc, eSCD2Image_DRAW_MODE::draw_mode_zoom);
@@ -286,7 +294,12 @@ void CTestDDrawDlg::OnPaint()
 
 
 		//text output sample code
-		CRect text_rect = draw_text(d2dc, rc, _T("Test 텍스트. 한글!"), 20.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::White, Gdiplus::Color::Black, DT_CENTER | DT_VCENTER);
+		m_text_area = rc;
+		m_text_area.DeflateRect(200, 100);
+		//rtext.left += 100;
+		draw_rect(d2dc, m_text_area, Gdiplus::Color::Blue);
+		CRect text_rect = draw_text(d2dc, m_text_area, m_edit_text.get_text(), _T("나눔스퀘어"), 40.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Black, m_align | m_valign);
+		//CRect text_rect = draw_text(d2dc, rc, _T("Test 한글\n두 번째 라인"), _T("나눔스퀘어"), 20.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Black, DT_CENTER | DT_VCENTER);
 		draw_rect(d2dc, text_rect, Gdiplus::Color::Red);
 
 		//draw 2 lines cross
@@ -1163,10 +1176,55 @@ void CTestDDrawDlg::OnDropFiles(HDROP hDropInfo)
 void CTestDDrawDlg::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	CString str;
+	str.Format(_T("%d, %d"), point.x, point.y);
+	SetWindowText(str);
+
 	//D2D1_SIZE_F sz = m_d2dc.get_size();
 	//m_d2dc.on_size_changed(sz.width, sz.height);
 
 	//m_pt = point;
 	//Invalidate();
 	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+void CTestDDrawDlg::OnEnChangeEditText()
+{
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedRadioDtLeft()
+{
+	m_align = DT_LEFT;
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedRadioDtCenter()
+{
+	m_align = DT_CENTER;
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedRadioDtRight()
+{
+	m_align = DT_RIGHT;
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedRadioDtTop()
+{
+	m_valign = DT_TOP;
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedRadioDtVcenter()
+{
+	m_valign = DT_VCENTER;
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedRadioDtBottom()
+{
+	m_valign = DT_BOTTOM;
+	Invalidate();
 }

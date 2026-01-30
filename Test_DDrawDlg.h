@@ -9,6 +9,7 @@
 #include "Common/ResizeCtrl.h"
 #include "Common/SCGdiplusBitmap.h"
 
+#include "Common/CEdit/SCEdit/SCEdit.h"
 #include "Common/directx/CSCD2Context/SCD2Context.h"
 #include "Common/directx/CSCD2Image/SCD2Image.h"
 
@@ -30,6 +31,9 @@ public:
 	CSCD2Image					m_d2memDC;	//CMemoryDC에 그려진 결과를 CSCD2Image로 전환
 	void						create_image_from_memory();
 
+	CRect						m_text_area;
+	UINT						m_align = DT_LEFT;
+	UINT						m_valign = DT_TOP;
 
 	CResizeCtrl					m_resize;
 	CSCGdiplusBitmap			m_img;
@@ -90,4 +94,12 @@ public:
 	afx_msg void OnBnClickedCheckGif();
 	afx_msg void OnDropFiles(HDROP hDropInfo);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	CSCEdit m_edit_text;
+	afx_msg void OnEnChangeEditText();
+	afx_msg void OnBnClickedRadioDtLeft();
+	afx_msg void OnBnClickedRadioDtCenter();
+	afx_msg void OnBnClickedRadioDtRight();
+	afx_msg void OnBnClickedRadioDtTop();
+	afx_msg void OnBnClickedRadioDtVcenter();
+	afx_msg void OnBnClickedRadioDtBottom();
 };
