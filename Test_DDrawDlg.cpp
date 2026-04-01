@@ -66,6 +66,8 @@ void CTestDDrawDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC_IMG, m_static_img);
 	DDX_Control(pDX, IDC_STATIC_IMG2, m_static_img2);
 	DDX_Control(pDX, IDC_EDIT_TEXT, m_edit_text);
+	DDX_Control(pDX, IDC_CHECK_TEXT_OUT, m_check_show_text);
+	DDX_Control(pDX, IDC_CHECK_SHADOW_OUT, m_check_show_shadow);
 }
 
 BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
@@ -95,6 +97,8 @@ BEGIN_MESSAGE_MAP(CTestDDrawDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_RADIO_DT_TOP, &CTestDDrawDlg::OnBnClickedRadioDtTop)
 	ON_BN_CLICKED(IDC_RADIO_DT_VCENTER, &CTestDDrawDlg::OnBnClickedRadioDtVcenter)
 	ON_BN_CLICKED(IDC_RADIO_DT_BOTTOM, &CTestDDrawDlg::OnBnClickedRadioDtBottom)
+	ON_BN_CLICKED(IDC_CHECK_TEXT_OUT, &CTestDDrawDlg::OnBnClickedCheckTextOut)
+	ON_BN_CLICKED(IDC_CHECK_SHADOW_OUT, &CTestDDrawDlg::OnBnClickedCheckShadowOut)
 END_MESSAGE_MAP()
 
 
@@ -135,7 +139,7 @@ BOOL CTestDDrawDlg::OnInitDialog()
 	m_resize.Add(IDC_STATIC_IMG2, 0, 0, 0, 0);
 	m_resize.Add(IDC_EDIT_TEXT, 0, 0, 0, 0);
 
-	m_edit_text.set_text(_T("I\nI\nI"));
+	m_edit_text.set_text(_T("한글M텍스"));
 
 	//m_filename = _T("D:\\ink-and-wash.png");
 	//m_filename = _T("D:\\bmp_256color.bmp");
@@ -245,7 +249,8 @@ void CTestDDrawDlg::OnPaint()
 		d2dc->SetTransform(D2D1::Matrix3x2F::Identity());
 
 		//black으로 칠한 후
-		d2dc->Clear(D2D1::ColorF(D2D1::ColorF::White));
+		//d2dc->Clear(D2D1::ColorF(D2D1::ColorF::White));
+		d2dc->Clear(get_sys_d2color(COLOR_3DFACE));
 
 		ID2D1SolidColorBrush* br;
 		d2dc->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &br);
@@ -298,7 +303,7 @@ void CTestDDrawDlg::OnPaint()
 		m_text_area.DeflateRect(200, 100);
 		//rtext.left += 100;
 		draw_rect(d2dc, m_text_area, Gdiplus::Color::Blue);
-		CRect text_rect = draw_text(d2dc, m_text_area, m_edit_text.get_text(), _T("나눔스퀘어"), 40.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Black, m_align | m_valign);
+		CRect text_rect = draw_text(d2dc, m_text_area, m_edit_text.get_text(), _T("나눔스퀘어"), 40.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Black, m_align | m_valign, m_show_text, m_show_shadow);
 		//CRect text_rect = draw_text(d2dc, rc, _T("Test 한글\n두 번째 라인"), _T("나눔스퀘어"), 20.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Black, DT_CENTER | DT_VCENTER);
 		draw_rect(d2dc, text_rect, Gdiplus::Color::Red);
 
@@ -1226,5 +1231,17 @@ void CTestDDrawDlg::OnBnClickedRadioDtVcenter()
 void CTestDDrawDlg::OnBnClickedRadioDtBottom()
 {
 	m_valign = DT_BOTTOM;
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedCheckTextOut()
+{
+	m_show_text = (m_check_show_text.GetCheck() == BST_CHECKED);
+	Invalidate();
+}
+
+void CTestDDrawDlg::OnBnClickedCheckShadowOut()
+{
+	m_show_shadow = (m_check_show_shadow.GetCheck() == BST_CHECKED);
 	Invalidate();
 }

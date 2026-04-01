@@ -35,6 +35,9 @@
 #define IDC_RADIO_DT_VCENTER            1012
 #define IDC_RADIO6                      1013
 #define IDC_RADIO_DT_BOTTOM             1013
+#define IDC_CHECK_TEXT_OUT              1014
+#define IDC_CHECK_TEXT_OUT2             1015
+#define IDC_CHECK_SHADOW_OUT            1015
 
 // Next default values for new objects
 // 
@@ -42,7 +45,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1009
+#define _APS_NEXT_CONTROL_VALUE         1015
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

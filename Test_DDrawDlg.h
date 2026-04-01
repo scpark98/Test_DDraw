@@ -34,6 +34,8 @@ public:
 	CRect						m_text_area;
 	UINT						m_align = DT_LEFT;
 	UINT						m_valign = DT_TOP;
+	bool						m_show_text = true;
+	bool						m_show_shadow = true;
 
 	CResizeCtrl					m_resize;
 	CSCGdiplusBitmap			m_img;
@@ -102,4 +104,8 @@ public:
 	afx_msg void OnBnClickedRadioDtTop();
 	afx_msg void OnBnClickedRadioDtVcenter();
 	afx_msg void OnBnClickedRadioDtBottom();
+	afx_msg void OnBnClickedCheckTextOut();
+	afx_msg void OnBnClickedCheckShadowOut();
+	CButton m_check_show_text;
+	CButton m_check_show_shadow;
 };
