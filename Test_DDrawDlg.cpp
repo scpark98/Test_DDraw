@@ -303,7 +303,7 @@ void CTestDDrawDlg::OnPaint()
 		m_text_area.DeflateRect(200, 100);
 		//rtext.left += 100;
 		draw_rect(d2dc, m_text_area, Gdiplus::Color::Blue);
-		CRect text_rect = draw_text(d2dc, m_text_area, m_edit_text.get_text(), _T("나눔스퀘어"), 40.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Black, m_align | m_valign, m_show_text, m_show_shadow);
+		CRect text_rect = draw_text(d2dc, m_text_area, m_edit_text.get_text(), _T("나눔스퀘어"), 40.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Transparent, Gdiplus::Color::Black, Gdiplus::Color::Transparent, 0.0f, m_align | m_valign, m_show_text, m_show_shadow);
 		//CRect text_rect = draw_text(d2dc, rc, _T("Test 한글\n두 번째 라인"), _T("나눔스퀘어"), 20.0f, DWRITE_FONT_WEIGHT_NORMAL, Gdiplus::Color::Red, Gdiplus::Color::Black, DT_CENTER | DT_VCENTER);
 		draw_rect(d2dc, text_rect, Gdiplus::Color::Red);
 
